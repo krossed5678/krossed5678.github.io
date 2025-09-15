@@ -1,17 +1,20 @@
 const chatButton = document.getElementById("chat-button");
 const chatContainer = document.getElementById("chat-container");
-const closeBtn = document.getElementById("close-btn");
 const sendBtn = document.getElementById("send-btn");
 const chatInput = document.getElementById("chat-input");
 const chatMessages = document.getElementById("chat-messages");
 
-// Toggle chat
+// Toggle chat open/close
 chatButton.addEventListener("click", () => {
-  chatContainer.classList.toggle("hidden");
-});
+  chatContainer.classList.toggle("open");
+  chatButton.classList.toggle("open");
 
-closeBtn.addEventListener("click", () => {
-  chatContainer.classList.add("hidden");
+  // Change icon
+  if (chatButton.classList.contains("open")) {
+    chatButton.textContent = "✖";
+  } else {
+    chatButton.textContent = "💬";
+  }
 });
 
 // Send message
@@ -27,10 +30,14 @@ function sendMessage() {
   addMessage(msg, "user");
   chatInput.value = "";
 
+  // Show typing indicator
+  const typingEl = addTypingIndicator();
+
   // Fake bot reply
   setTimeout(() => {
+    removeTypingIndicator(typingEl);
     addMessage("This is a demo bot response. Imagine me answering FAQs!", "bot");
-  }, 600);
+  }, 1500);
 }
 
 function addMessage(text, sender) {
@@ -39,4 +46,19 @@ function addMessage(text, sender) {
   msgEl.textContent = text;
   chatMessages.appendChild(msgEl);
   chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function addTypingIndicator() {
+  const typingEl = document.createElement("div");
+  typingEl.classList.add("message", "bot", "typing");
+  typingEl.innerHTML = `<span></span><span></span><span></span>`;
+  chatMessages.appendChild(typingEl);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+  return typingEl;
+}
+
+function removeTypingIndicator(el) {
+  if (el && el.parentNode) {
+    el.parentNode.removeChild(el);
+  }
 }
