@@ -18,15 +18,12 @@
   </div>
   <button id="chat-button" class="chat-button">💬</button>
 
-  <!-- Custom JS -->
-  <script src="script.js"></script>
-
-  <!-- Tidio Chat Widget -->
+  <script src="config.js"></script>
   <script>
-  const tidioScript = document.createElement("script");
-  tidioScript.src = `//code.tidio.co/${TIDIO_KEY}.js`;
-  tidioScript.async = true;
-  document.body.appendChild(tidioScript);
+    const tidioScript = document.createElement("script");
+    tidioScript.src = `https://code.tidio.co/${TIDIO_KEY}.js`;
+    tidioScript.async = true;
+    document.body.appendChild(tidioScript);
   </script>
 </body>
 </html>
