@@ -23,5 +23,10 @@ chatbot-demo/
 
 ---
 
+## 🔒 env
+- create your own .env file if you need and paste you tidio key in there
+- never share your key
+
+
 ## 📜 License
 This project is open-source and free to use for demos, client pitches, and learning.

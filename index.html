@@ -1,24 +1,32 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Chatbot Demo</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <!-- Chat Button -->
-  <div id="chat-button">💬</div>
-
-  <!-- Chat Window -->
-  <div id="chat-container" class="hidden">
-    <div id="chat-header">AI Assistant</div>
-    <div id="chat-messages"></div>
-    <div id="chat-input-area">
-      <input type="text" id="chat-input" placeholder="Type a message...">
-      <button id="send-btn">➤</button>
+  <!-- Custom Chatbot -->
+  <div id="chat-container" class="chat-container">
+    <div id="chat-header" class="chat-header">Chat with us</div>
+    <div id="chat-messages" class="chat-messages"></div>
+    <div class="chat-input-area">
+      <input id="chat-input" type="text" placeholder="Type a message..." />
+      <button id="send-btn">Send</button>
     </div>
   </div>
+  <button id="chat-button" class="chat-button">💬</button>
 
+  <!-- Custom JS -->
   <script src="script.js"></script>
+
+  <!-- Tidio Chat Widget -->
+  <script>
+  const tidioScript = document.createElement("script");
+  tidioScript.src = `//code.tidio.co/${TIDIO_KEY}.js`;
+  tidioScript.async = true;
+  document.body.appendChild(tidioScript);
+  </script>
 </body>
 </html>
