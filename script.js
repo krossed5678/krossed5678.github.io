@@ -3,7 +3,6 @@ const chatContainer = document.getElementById("chat-container");
 const sendBtn = document.getElementById("send-btn");
 const chatInput = document.getElementById("chat-input");
 const chatMessages = document.getElementById("chat-messages");
-const TIDIO_KEY = "l9fczj4tk7zdvr7wdf2yyqle2ua5jht3";
 
 // Toggle chat open/close
 chatButton.addEventListener("click", () => {
