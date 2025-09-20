@@ -8,13 +8,23 @@ Backend (FastAPI)
 python -m venv .venv; .\.venv\Scripts\Activate.ps1; pip install -r requirements.txt
 ```
 
-2. Run the backend (from repo root):
+2. Run the backend + frontend together (PowerShell)
+
+We added a convenience PowerShell script that builds the React frontend and starts the backend so both serve from the same origin and won't be mixed up.
+
+From the repo root (PowerShell):
 
 ```powershell
-uvicorn backend.app.main:app --reload --host 127.0.0.1 --port 8000
+# create and activate your Python venv first, install requirements
+python -m venv .venv; .\.venv\Scripts\Activate.ps1; pip install -r requirements.txt
+
+# then run the helper script which builds the frontend and starts the backend
+./start-dev.ps1
 ```
 
-The API will be available at http://127.0.0.1:8000. Open http://127.0.0.1:8000/docs for the automatic Swagger UI.
+This will build the static React app into `frontend/build` and start uvicorn serving the backend API at http://127.0.0.1:8000 and the frontend at the same host (SPA served at `/`).
+
+If you prefer to run frontend dev server and backend separately, see the section below.
 
 Frontend (React)
 
