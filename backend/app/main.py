@@ -24,10 +24,9 @@ app.add_middleware(
 )
 
 # serve frontend build (if available)
-FRONTEND_BUILD = Path(__file__).parent.parent / "frontend" / "build"
-if FRONTEND_BUILD.exists():
-    app.mount("/", StaticFiles(directory=str(FRONTEND_BUILD), html=True), name="frontend")
-
+# The project layout places `frontend` at the repository root. main.py lives in backend/app,
+# so go up three levels to reach the repo root and then `frontend/build`.
+FRONTEND_BUILD = Path(__file__).resolve().parent.parent.parent / "frontend" / "build"
 app.include_router(router, prefix="/api")
 
 
@@ -43,3 +42,8 @@ def serve_spa(full_path: str):
     if index_file.exists():
         return FileResponse(str(index_file))
     return {"status": "ok"}
+
+
+# Serve static SPA after registering API and health routes so the /api and /health prefixes are not shadowed
+if FRONTEND_BUILD.exists():
+    app.mount("/", StaticFiles(directory=str(FRONTEND_BUILD), html=True), name="frontend")

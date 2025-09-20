@@ -41,3 +41,11 @@ class CallLog(Base):
     text = Column(Text, nullable=True)
     timestamp = Column(DateTime, default=datetime.datetime.utcnow)
     type = Column(String, default="voice")
+
+class TaskAssign(Base):
+    __tablename__ = "task_assigns"
+    id = Column(Integer, primary_key=True, index=True)
+    task_name = Column(String, nullable=False)
+    assigned_to = Column(String, nullable=False)
+    due_date = Column(DateTime, nullable=True)
+    status = Column(String, default="clear")
