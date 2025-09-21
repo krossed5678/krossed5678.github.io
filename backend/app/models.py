@@ -49,3 +49,11 @@ class TaskAssign(Base):
     assigned_to = Column(String, nullable=False)
     due_date = Column(DateTime, nullable=True)
     status = Column(String, default="clear")
+
+class Inventory(Base):
+    __tablename__ = "inventory"
+    id = Column(Integer, primary_key=True, index=True)
+    item_name = Column(String, nullable=False)
+    quantity = Column(Integer, default=0)
+    Low_stock_threshold = Column(Integer, default=5)
+    last_updated = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)

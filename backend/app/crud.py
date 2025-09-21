@@ -162,3 +162,8 @@ def list_logs(limit: int = 200) -> List[CallLog]:
     with get_session() as session:
         results = session.query(CallLog).order_by(CallLog.timestamp.desc()).all()
         return results[:limit]
+
+def task_assignments(limit: int = 50) -> List[TaskAssign]:
+    with get_session() as session:
+        results = session.query(TaskAssign).order_by(TaskAssign.id.desc()).all()
+        return results[:limit]
