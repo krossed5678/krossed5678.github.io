@@ -36,6 +36,22 @@
         </div>
       </header>
 
+      <div class="mb-4">
+        <div class="card">
+          <div class="flex items-center justify-between">
+            <div>
+              <strong>Quick start</strong>
+              <div class="text-sm text-gray-500">If the backend isn't running, click the button to start it (requires registering the protocol once).</div>
+            </div>
+            <div>
+              <!-- Protocol link will open launch-site.bat when registered -->
+              <a id="start-backend-proto" href="krossed5678://open" class="px-4 py-2 bg-green-600 text-white rounded inline-block">Start Backend</a>
+              <a id="protocol-instructions" href="#" class="ml-3 text-sm text-gray-600">How to enable</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <main id="app">
         <!-- Dashboard -->
         <section id="dashboard" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -145,13 +161,17 @@
       document.getElementById('btn-logs').onclick = ()=> showTab('logs');
 
       // Health and data
+      // If the page was opened as file://, use an explicit API_BASE so fetch() hits the local backend.
+      const API_BASE = (location.protocol === 'file:') ? 'http://127.0.0.1:8000' : '';
+      function apiUrl(path){ return (API_BASE ? API_BASE : '') + path; }
+
       async function apiGet(path){
-        const res = await fetch(path);
+        const res = await fetch(apiUrl(path));
         if(!res.ok) throw new Error(await res.text());
         return res.json();
       }
       async function apiPost(path, body){
-        const res = await fetch(path, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+        const res = await fetch(apiUrl(path), {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
         if(!res.ok) throw new Error(await res.text());
         return res.json().catch(()=>null);
       }
@@ -233,6 +253,12 @@
       document.getElementById('refresh-all').onclick = refreshAll;
       document.getElementById('refresh-logs').onclick = refreshAll;
       document.getElementById('refresh-staff').onclick = refreshAll;
+
+      // Protocol instructions helper
+      document.getElementById('protocol-instructions').onclick = (e)=>{
+        e.preventDefault();
+        alert('To enable one-click Start Backend:\n1) Open PowerShell in this folder and run: .\\register-protocol.ps1\n2) After registration, clicking "Start Backend" will launch launch-site.bat and open the site.\nTo undo: run .\\unregister-protocol.ps1');
+      }
     </script>
   </body>
 </html>

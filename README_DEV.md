@@ -64,3 +64,21 @@ $env:SMTP_HOST = 'smtp.example.com'; $env:SMTP_PORT = '587'; $env:SMTP_USER = 'u
 ```
 
 If SMTP is not configured, notification attempts are no-ops.
+
+## One-click start from `index.html` (optional)
+
+You can register a simple custom URL protocol so the "Start Backend" button in the repo-root `index.html` will launch `launch-site.bat` and start the backend automatically.
+
+1. Open PowerShell in the repo folder and run:
+
+	.\register-protocol.ps1
+
+2. Open `index.html` in your browser (double-click) and click the green "Start Backend" button. It will invoke the registered protocol and start the backend, then open http://127.0.0.1:8000/
+
+3. To remove the protocol later, run:
+
+	.\unregister-protocol.ps1
+
+If you prefer not to register a protocol, just run `launch-site.bat` manually from a terminal and then open http://127.0.0.1:8000/ in your browser.
+
+Note: When you open `index.html` as a file (file://), the page will use http://127.0.0.1:8000 as the API base. This makes it possible to open the file and have it contact the local backend started by the launcher.

@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Manager Assistant — Static Test</title>
+    <style>
+      body{font-family:system-ui,Segoe UI,Roboto,Arial; background:#f3f4f6; color:#0f172a; padding:40px}
+      .box{max-width:800px;background:white;padding:20px;border-radius:8px;box-shadow:0 4px 20px rgba(2,6,23,.06)}
+      pre{white-space:pre-wrap}
+    </style>
+  </head>
+  <body>
+    <div class="box">
+      <h1>Static Page Test</h1>
+      <p>If you can see this page when opening <code>index.static.html</code> directly (double-click), your browser is rendering basic HTML/CSS correctly.</p>
+      <p>Next steps:</p>
+      <ul>
+        <li>Open DevTools (F12) → Console and look for errors when you open <code>index.html</code>.</li>
+        <li>Open DevTools → Network and reload <code>index.html</code>; check for failed resource requests (status ≠ 200).</li>
+      </ul>
+      <h3>Quick checks</h3>
+      <pre>
+- If this page displays, the browser renders HTML/CSS fine.
+- If the root index.html still shows blank, an extension, CSP, or blocking of external resources (like the Tailwind CDN) is likely stopping JS/CSS from loading.
+      </pre>
+    </div>
+  </body>
+</html>

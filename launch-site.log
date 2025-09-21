@@ -1,0 +1,5 @@
+---------------- Sun 09/21/2025 11:12:42.64 
+Launch args:  
+Uvicorn already running (PID=23396
+Starting uvicorn with C:\Users\koanr\Desktop\Work\krossed5678.github.io\.venv312\Scripts\python.exe -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 
+Waiting for backend to start... 
