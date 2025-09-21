@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Manager Assistant — Local</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; }
+      .card { background: white; border-radius: 12px; padding: 16px; box-shadow: 0 6px 20px rgba(2,6,23,0.06); }
+      pre { white-space: pre-wrap; word-break: break-word; }
+    </style>
+  </head>
+  <body class="bg-slate-50 min-h-screen p-6">
+    <div class="max-w-6xl mx-auto">
+      <!-- Fallback visible banner (inline styles so it shows even if external CSS/JS are blocked) -->
+      <div id="fallback-visible" style="font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Arial; background:#fff; border:1px solid #e6e9ee; padding:12px; border-radius:8px; margin-bottom:14px;">
+        If you see this message the page's HTML is loading correctly. If the rest of the page is blank, your browser may be blocking external scripts or styles (extensions/CSP/offline). Open DevTools (F12) → Console/Network for details.
+      </div>
+
+      <noscript>
+        <div style="background:#fff3c4;color:#7a4f01;padding:12px;border-radius:8px;border:1px solid #f0e0a0;margin-bottom:14px;">
+          JavaScript is disabled in your browser. Enable JavaScript to use the interactive features of this page.
+        </div>
+      </noscript>
+      <header class="flex items-center justify-between mb-6">
+        <div>
+          <h1 class="text-2xl font-bold">Manager Assistant (Local)</h1>
+          <p class="text-sm text-gray-500">This standalone page talks to the local backend started by <code>launch-site.bat</code>.</p>
+        </div>
+        <div class="flex gap-2">
+          <button id="btn-dashboard" class="px-3 py-2 bg-indigo-600 text-white rounded">Dashboard</button>
+          <button id="btn-bookings" class="px-3 py-2 bg-white border rounded">Bookings</button>
+          <button id="btn-staff" class="px-3 py-2 bg-white border rounded">Staff</button>
+          <button id="btn-logs" class="px-3 py-2 bg-white border rounded">Logs</button>
+        </div>
+      </header>
+
+      <main id="app">
+        <!-- Dashboard -->
+        <section id="dashboard" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div class="lg:col-span-2 card">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-lg font-semibold">System Health</h2>
+              <div class="flex gap-2">
+                <button id="refresh-health" class="px-3 py-1 bg-gray-100 rounded">Refresh</button>
+                <button id="refresh-all" class="px-3 py-1 bg-gray-100 rounded">Refresh Data</button>
+              </div>
+            </div>
+            <div id="health-cards" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+            <div class="mt-4">
+              <h3 class="text-sm font-semibold">Assistant (Voice)</h3>
+              <div class="mt-2 flex gap-2">
+                <button id="start-voice" class="px-3 py-2 bg-green-500 text-white rounded">Start Voice</button>
+                <button id="stop-voice" class="px-3 py-2 bg-red-500 text-white rounded">Stop</button>
+                <button id="speak-sample" class="px-3 py-2 bg-indigo-600 text-white rounded">Speak Hello</button>
+              </div>
+              <div class="mt-2 text-sm text-gray-600">Recognized: <span id="recognized">(none)</span></div>
+            </div>
+          </div>
+
+          <aside class="card">
+            <h4 class="font-semibold mb-2">Quick Actions</h4>
+            <div class="flex flex-col gap-2">
+              <button id="start-sim" class="px-3 py-2 bg-green-500 text-white rounded">Start Simulator</button>
+              <button id="finalize" class="px-3 py-2 bg-yellow-400 rounded">Finalize Provisionals</button>
+            </div>
+            <div class="mt-4">
+              <h4 class="font-semibold">Recent Bookings</h4>
+              <ul id="recent-bookings" class="mt-2 space-y-2 max-h-40 overflow-auto"></ul>
+            </div>
+          </aside>
+        </section>
+
+        <!-- Bookings -->
+        <section id="bookings" class="hidden">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="md:col-span-1 card">
+              <h3 class="font-semibold mb-3">Create Booking</h3>
+              <form id="booking-form" class="space-y-3">
+                <div>
+                  <label class="block text-sm text-gray-700">Customer name</label>
+                  <input id="b-name" class="mt-1 block w-full rounded border-gray-300 p-2" />
+                </div>
+                <div>
+                  <label class="block text-sm text-gray-700">Start time</label>
+                  <input id="b-start" type="datetime-local" class="mt-1 block w-full rounded border-gray-300 p-2" />
+                </div>
+                <div>
+                  <label class="block text-sm text-gray-700">End time</label>
+                  <input id="b-end" type="datetime-local" class="mt-1 block w-full rounded border-gray-300 p-2" />
+                </div>
+                <div>
+                  <label class="block text-sm text-gray-700">Party size</label>
+                  <input id="b-party" type="number" min="1" value="1" class="mt-1 block w-24 rounded border-gray-300 p-2" />
+                </div>
+                <div>
+                  <label class="block text-sm text-gray-700">Notes</label>
+                  <input id="b-notes" class="mt-1 block w-full rounded border-gray-300 p-2" />
+                </div>
+                <div class="flex gap-2 mt-2">
+                  <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded">Create booking</button>
+                  <button id="voice-fill" type="button" class="px-3 py-2 bg-green-600 text-white rounded">Voice Fill</button>
+                </div>
+              </form>
+            </div>
+            <div class="md:col-span-2 card">
+              <h3 class="font-semibold mb-3">All Bookings</h3>
+              <div id="bookings-list" class="grid gap-3"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Staff -->
+        <section id="staff" class="hidden card">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-semibold">Staffing</h3>
+            <button id="refresh-staff" class="px-3 py-1 bg-slate-100 rounded">Refresh</button>
+          </div>
+          <ul id="staff-list" class="space-y-2"></ul>
+        </section>
+
+        <!-- Logs -->
+        <section id="logs" class="hidden card">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-semibold">Logs</h3>
+            <button id="refresh-logs" class="px-3 py-1 bg-slate-100 rounded">Refresh</button>
+          </div>
+          <ul id="logs-list" class="space-y-2"></ul>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      // Simple tabbing
+      const $ = sel => document.querySelector(sel);
+      const $$ = sel => document.querySelectorAll(sel);
+      function showTab(name){
+        ['dashboard','bookings','staff','logs'].forEach(t=>document.getElementById(t).classList.add('hidden'));
+        document.getElementById(name).classList.remove('hidden');
+      }
+      document.getElementById('btn-dashboard').onclick = ()=> showTab('dashboard');
+      document.getElementById('btn-bookings').onclick = ()=> showTab('bookings');
+      document.getElementById('btn-staff').onclick = ()=> showTab('staff');
+      document.getElementById('btn-logs').onclick = ()=> showTab('logs');
+
+      // Health and data
+      async function apiGet(path){
+        const res = await fetch(path);
+        if(!res.ok) throw new Error(await res.text());
+        return res.json();
+      }
+      async function apiPost(path, body){
+        const res = await fetch(path, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+        if(!res.ok) throw new Error(await res.text());
+        return res.json().catch(()=>null);
+      }
+
+      async function refreshHealth(){
+        try{
+          const h = await apiGet('/health');
+          renderHealth({root: h});
+        }catch(e){
+          renderHealth({root: {ok:false, err: ''+e}});
+        }
+      }
+
+      function renderHealth(health){
+        const container = document.getElementById('health-cards');
+        container.innerHTML = '';
+        const rootCard = document.createElement('div'); rootCard.className='p-4 rounded-lg border bg-slate-50';
+        rootCard.innerHTML = `<div class="text-xs text-gray-500">Backend</div><div class="text-lg font-semibold">${health.root?.status|| 'ok'}</div>`;
+        container.appendChild(rootCard);
+      }
+
+      async function refreshAll(){
+        try{ const b = await apiGet('/api/bookings'); renderBookingsSummary(b); }catch(e){ console.warn(e) }
+        try{ const l = await apiGet('/api/logs'); renderLogs(l) }catch(e){}
+        try{ const e = await apiGet('/api/employees'); renderStaff(e) }catch(e){}
+      }
+
+      function renderBookingsSummary(bookings){
+        const recent = document.getElementById('recent-bookings'); recent.innerHTML='';
+        bookings.slice(0,6).forEach(b=>{ const li=document.createElement('li'); li.className='text-sm border rounded p-2 bg-white'; li.innerHTML=`<div class="font-medium">${b.customer_name} <span class="text-xs text-gray-400">#${b.id}</span></div><div class="text-xs text-gray-500">${b.start_time||''} → ${b.end_time||''}</div>`; recent.appendChild(li); })
+        const list = document.getElementById('bookings-list'); list.innerHTML=''; bookings.forEach(b=>{ const d=document.createElement('div'); d.className='p-3 border rounded bg-white'; d.innerHTML=`<div class="font-medium">${b.customer_name} <span class="text-sm text-gray-400">#${b.id}</span></div><div class="text-sm text-gray-600">${b.start_time||''} → ${b.end_time||''}</div><div class="text-xs text-gray-500">${b.status}</div>`; list.appendChild(d); })
+      }
+
+      function renderLogs(logs){ const node = document.getElementById('logs-list'); node.innerHTML=''; logs.forEach(l=>{ const li=document.createElement('li'); li.className='p-3 border rounded bg-white'; li.innerHTML=`<div class="font-medium">[${l.type}] ${l.source}</div><div class="text-sm text-gray-600">${l.text}</div><div class="text-xs text-gray-400">${l.timestamp}</div>`; node.appendChild(li); }) }
+      function renderStaff(staff){ const node = document.getElementById('staff-list'); node.innerHTML=''; staff.forEach(s=>{ const li=document.createElement('li'); li.className='p-3 border rounded bg-white flex justify-between items-center'; li.innerHTML=`<div><div class="font-medium">${s.name}</div><div class="text-sm text-gray-500">Standby: ${s.standby? 'Yes':'No'}</div></div>`; node.appendChild(li); }) }
+
+      // Booking form
+      document.getElementById('booking-form').onsubmit = async (ev)=>{
+        ev.preventDefault();
+        const payload = { customer_name: document.getElementById('b-name').value, notes: document.getElementById('b-notes').value, party_size: parseInt(document.getElementById('b-party').value || '1') };
+        const st = document.getElementById('b-start').value; const et = document.getElementById('b-end').value;
+        if(st && et){ payload.start_time = new Date(st).toISOString(); payload.end_time = new Date(et).toISOString(); }
+        try{ await apiPost('/api/bookings', payload); await refreshAll(); alert('Created'); }catch(e){ alert('Error: '+e) }
+      }
+
+      // Simulator & finalize
+      document.getElementById('start-sim').onclick = async ()=>{ await apiPost('/api/simulate/start', {}); alert('Simulator started'); }
+      document.getElementById('finalize').onclick = async ()=>{ await apiPost('/api/bookings/finalize', {}); await refreshAll(); alert('Finalized'); }
+
+      // voice: Web Speech API client-side
+      let recognition=null;
+      document.getElementById('start-voice').onclick = ()=>{
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if(!SpeechRecognition){ alert('SpeechRecognition not supported in this browser'); return; }
+        recognition = new SpeechRecognition(); recognition.lang='en-US'; recognition.interimResults=false; recognition.onresult = (ev)=>{ const t = ev.results[0][0].transcript; document.getElementById('recognized').textContent = t; document.getElementById('b-name').value = t; }
+        recognition.onend = ()=>{ /* noop */ }
+        recognition.start();
+      }
+      document.getElementById('stop-voice').onclick = ()=>{ if(recognition) recognition.stop(); }
+
+      // server TTS: speak sample
+      document.getElementById('speak-sample').onclick = async ()=>{
+        try{
+          const res = await fetch('/api/asr/speak', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({text:'Hello, this is your manager assistant'})});
+          if(!res.ok){ alert('TTS error: '+await res.text()); return; }
+          const blob = await res.blob(); const url = URL.createObjectURL(blob); const a = new Audio(url); a.play();
+        }catch(e){ alert('Error: '+e) }
+      }
+
+      // voice fill (use client speech)
+      document.getElementById('voice-fill').onclick = ()=>{ document.getElementById('start-voice').click(); }
+
+  // init
+  (async ()=>{ await refreshHealth(); await refreshAll(); showTab('dashboard'); })();
+  // Debug status indicator
+  const statusNode = document.createElement('div'); statusNode.id='client-status'; statusNode.className='fixed bottom-4 right-4 bg-white p-3 rounded shadow text-sm'; statusNode.textContent='JS loaded'; document.body.appendChild(statusNode);
+  (async ()=>{ try{ const h = await fetch('/health'); const j = await h.json(); statusNode.textContent = 'Backend: '+(j.status||'ok'); }catch(e){ statusNode.textContent = 'Backend unreachable'; } })();
+      document.getElementById('refresh-health').onclick = refreshHealth;
+      document.getElementById('refresh-all').onclick = refreshAll;
+      document.getElementById('refresh-logs').onclick = refreshAll;
+      document.getElementById('refresh-staff').onclick = refreshAll;
+    </script>
+  </body>
+</html>
