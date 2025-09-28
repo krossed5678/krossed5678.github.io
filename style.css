@@ -115,6 +115,39 @@ body {
 }
 .nav-tab.active::after { width: 100%; }
 
+/* Hamburger button animation */
+.hamburger {
+  /* compact fixed-size stacked bars */
+  width: 28px;
+  height: 18px;
+  display: inline-block;
+  position: relative;
+  /* nudge down a few pixels to visually center inside the button */
+  top: 3px;
+}
+.hamburger .bar {
+  display: block;
+  width: 100%;
+  height: 2px;
+  background: white;
+  position: relative;
+  border-radius: 2px;
+  transition: transform .28s cubic-bezier(.2,.9,.2,1), opacity .18s ease;
+  transform-origin: center;
+}
+.hamburger .bar + .bar { margin-top: 5px; }
+.hamburger.open .bar:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+.hamburger.open .bar:nth-child(2) { opacity: 0; transform: scaleX(0); }
+.hamburger.open .bar:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+
+/* Overlay entrance */
+.mobile-nav-overlay { animation: slideInFromTop .34s cubic-bezier(.2,.9,.2,1) both; }
+@keyframes slideInFromTop { from { opacity: 0; transform: translateY(-8px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+/* Reviews/replies list item entrance */
+.list-item { opacity: 0; transform: translateY(6px); transition: all .28s cubic-bezier(.2,.9,.2,1); }
+.list-item.show { opacity: 1; transform: translateY(0); }
+
 /* Metric card */
 .metric-card { transition: all .28s ease; cursor: pointer; }
 .metric-card:hover { transform: scale(1.03); }

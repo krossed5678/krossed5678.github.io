@@ -1,24 +1,103 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# .gitignore - comprehensive for this mixed Node/Python frontend-backend project
 
-# dependencies
-/node_modules
-/.pnp
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+.pnpm-debug.log*
+.pnp/
 .pnp.js
+.next/
+/dist/
+/build/
+/public/build/
 
-# testing
-/coverage
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+venv/
+ENV/
+env/
+.venv/
+venvs/
+# pipenv
+Pipfile.lock
+# poetry
+poetry.lock
 
-# production
-/build
-
-# misc
-.DS_Store
+# Local env files
+.env
+.env.*
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
 
+# VSCode
+.vscode/
+.history/
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Editor backups
+*~
+*.swp
+*.swo
+
+# Logs and databases
+*.log
+logs/
+*.sqlite3
+*.db
+bookings.db
+launch-site.log
+
+# Frontend build/static
+frontend/build/
+frontend/.cache/
+frontend/node_modules/
+frontend/dist/
+
+# Build artifacts
+dist/
+build/
+coverage/
+/*.tgz
+
+# Temporary files
+tmp/
+temp/
+.cache/
+
+# Certificates
+certs/
+*.pem
+*.key
+
+# Runtime generated
 npm-debug.log*
 yarn-debug.log*
-yarn-error.log*
-node_modules
+
+# Ignore environment specific registered protocol scripts (local helpers)
+*.ps1
+*.bat
+
+# JetBrains
+.idea/
+
+# macOS Finder
+.AppleDouble
+.LSOverride
+
+# Other
+.vagrant/
+
+# Allow list (if any) - none

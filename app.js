@@ -38,20 +38,9 @@ function showNotification(msg, type = 'info') {
   setTimeout(() => { n.style.opacity = '0'; setTimeout(()=> n.remove(),300); }, 4500);
 }
 
-// ---------- API helpers with graceful fallback ----------
-const API_BASE = ''; // leave blank for local-only usage
-async function apiGet(path) {
-  if (!API_BASE) return Promise.reject(new Error('no-backend'));
-  const r = await fetch(API_BASE + path);
-  if (!r.ok) throw new Error('API GET failed');
-  return r.json();
-}
-async function apiPost(path, body) {
-  if (!API_BASE) return Promise.reject(new Error('no-backend'));
-  const r = await fetch(API_BASE + path, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
-  if (!r.ok) throw new Error('API POST failed');
-  try { return await r.json(); } catch { return null; }
-}
+// ---------- Client-side only app - no backend needed ----------
+// This app works entirely in the browser when you open index.html
+// All data is stored in localStorage and reviews are simulated
 
 // ---------- Local storage utilities ----------
 const LS_KEYS = {
@@ -231,11 +220,13 @@ function renderReviews() {
   node.innerHTML = '';
   const reviews = getReviews();
   if (!reviews.length) { node.innerHTML = '<div class="text-gray-500 text-sm py-6 text-center">No reviews yet</div>'; return; }
-  reviews.slice(0,200).forEach(rv => {
+  reviews.slice(0,200).forEach((rv, idx) => {
     const el = document.createElement('div');
-    el.className = 'p-3 bg-white rounded-lg border';
+    el.className = 'p-3 bg-white rounded-lg border list-item';
     el.innerHTML = `<div class="flex justify-between items-start"><div><div class="font-semibold text-gray-800">${rv.author_name || 'Guest'}</div><div class="text-xs text-gray-500">${rv.rating||0} ★ • ${friendlyDate(rv.time)}</div></div><div class="text-sm text-gray-700">${rv.text || ''}</div></div>`;
     node.appendChild(el);
+    // staggered show animation
+    setTimeout(() => el.classList.add('show'), 30 + (idx * 30));
   });
 }
 
@@ -246,38 +237,70 @@ function renderReviewReplies() {
   if (!replies.length) { node.innerHTML = '<div class="text-gray-500 text-sm py-6 text-center">No replies generated yet</div>'; return; }
   replies.slice(0,200).forEach(r => {
     const el = document.createElement('div');
-    el.className = 'p-3 bg-white rounded-lg border';
+    el.className = 'p-3 bg-white rounded-lg border list-item';
     el.innerHTML = `<div class="text-xs text-gray-500">To: ${r.review_author || 'Guest'} • ${friendlyDate(r.created_at)}</div><div class="mt-2 text-sm text-gray-800">${r.reply}</div>`;
     node.appendChild(el);
+    setTimeout(() => el.classList.add('show'), 30 + (Math.random() * 120));
   });
 }
 
 // Simulate fetching reviews when no backend/API is configured.
 function simulateFetchReviews() {
-  // create one or two fake reviews with random content for demo
-  const sample = [
-    { id: uid('rev_'), author_name: 'Patricia', rating: 5, text: 'Amazing service and lovely food!', time: nowISO() },
-    { id: uid('rev_'), author_name: 'Tom', rating: 2, text: 'Waited too long and the steak was overcooked.', time: nowISO() }
+  // Generate 3-5 realistic demo reviews with varied ratings and content
+  const names = ['Patricia M.', 'Tom R.', 'Sarah L.', 'Mike D.', 'Jennifer K.', 'David W.', 'Lisa C.', 'James P.'];
+  const positiveReviews = [
+    'Amazing service and lovely food! Will definitely come back.',
+    'Excellent experience from start to finish. Highly recommend!',
+    'Great atmosphere and the staff was so friendly.',
+    'Best meal I\'ve had in a long time. Perfect for date night.',
+    'Outstanding quality and wonderful presentation.'
   ];
+  const neutralReviews = [
+    'Good food but service was a bit slow during peak hours.',
+    'Nice place, decent food. Could use some improvements.',
+    'Average experience overall. Nothing special but not bad either.'
+  ];
+  const negativeReviews = [
+    'Waited too long and the steak was overcooked.',
+    'Disappointing experience. Food was cold when it arrived.',
+    'Poor service and overpriced for what you get.',
+    'Had to wait 45 minutes just to get seated.'
+  ];
+
+  const numReviews = 3 + Math.floor(Math.random() * 3); // 3-5 reviews
+  const sample = [];
+  
+  for (let i = 0; i < numReviews; i++) {
+    const rating = Math.random() < 0.6 ? (4 + Math.floor(Math.random() * 2)) : // 60% chance of 4-5 stars
+                   Math.random() < 0.7 ? 3 : // 28% chance of 3 stars
+                   (1 + Math.floor(Math.random() * 2)); // 12% chance of 1-2 stars
+    
+    let reviewText;
+    if (rating >= 4) reviewText = positiveReviews[Math.floor(Math.random() * positiveReviews.length)];
+    else if (rating === 3) reviewText = neutralReviews[Math.floor(Math.random() * neutralReviews.length)];
+    else reviewText = negativeReviews[Math.floor(Math.random() * negativeReviews.length)];
+
+    const dayOffset = Math.floor(Math.random() * 30); // Reviews from last 30 days
+    const reviewDate = new Date(Date.now() - dayOffset * 24 * 60 * 60 * 1000);
+    
+    sample.push({
+      id: uid('rev_'),
+      author_name: names[Math.floor(Math.random() * names.length)],
+      rating: rating,
+      text: reviewText,
+      time: reviewDate.toISOString()
+    });
+  }
+  
   return Promise.resolve(sample);
 }
 
 // Attempt to fetch reviews from Google Places Reviews via Places API (requires API key/server proxy).
 // We keep this optional: if no place id or network access, fall back to simulateFetchReviews.
 async function fetchReviewsForPlace(placeId) {
-  if (!placeId) return simulateFetchReviews();
-  // The real Google Places API requires server-side key or proxy; try a client-side call only if API_BASE or a proxy exists.
-  if (!API_BASE) return simulateFetchReviews();
-  try {
-    const res = await fetch(`${API_BASE}/reviews?place_id=${encodeURIComponent(placeId)}`);
-    if (!res.ok) throw new Error('fetch failed');
-    const data = await res.json();
-    // Expect an array of reviews
-    return data.reviews || data || [];
-  } catch (e) {
-    console.warn('Reviews fetch failed; using simulated reviews', e);
-    return simulateFetchReviews();
-  }
+  // Client-side only: always use simulated reviews
+  // This creates realistic demo data for any place ID entered
+  return simulateFetchReviews();
 }
 
 // Reply generator: craft a thoughtful reply based on rating and text heuristics
@@ -380,7 +403,7 @@ function showTab(name) {
   if (btn) btn.classList.add('active');
 
   // sections
-  ['dashboard','bookings','staff','logs'].forEach(s => {
+  ['dashboard','bookings','staff','logs','reviews'].forEach(s => {
     const el = document.getElementById(s);
     if (!el) return;
     if (s === name) {
@@ -398,6 +421,50 @@ $('#btn-dashboard').onclick = () => showTab('dashboard');
 $('#btn-bookings').onclick = () => showTab('bookings');
 $('#btn-staff').onclick = () => showTab('staff');
 $('#btn-logs').onclick = () => showTab('logs');
+$('#btn-reviews').onclick = () => showTab('reviews');
+
+// hamburger mobile nav toggle (simple)
+$('#hamburger').onclick = () => {
+  // create overlay if missing
+  let ov = document.getElementById('mobile-nav-overlay');
+  if (!ov) {
+    ov = document.createElement('div'); ov.id = 'mobile-nav-overlay';
+    ov.className = 'fixed inset-0 bg-black/50 z-50 flex items-start p-6 mobile-nav-overlay';
+    ov.innerHTML = `
+      <div class="bg-white rounded-xl p-4 w-full max-w-xs">
+        <div class="flex flex-col space-y-2">
+          <button id="m-dashboard" class="px-4 py-2 text-left">Dashboard</button>
+          <button id="m-bookings" class="px-4 py-2 text-left">Bookings</button>
+          <button id="m-staff" class="px-4 py-2 text-left">Staff</button>
+          <button id="m-logs" class="px-4 py-2 text-left">Logs</button>
+          <button id="m-reviews" class="px-4 py-2 text-left">Reviews</button>
+          <button id="m-close" class="mt-3 px-4 py-2 bg-gray-100 rounded">Close</button>
+        </div>
+      </div>`;
+    document.body.appendChild(ov);
+    // animate hamburger to X
+    const ham = document.querySelector('#hamburger .hamburger');
+    if (ham) ham.classList.add('open');
+    // wire mobile buttons
+    $('#m-dashboard').onclick = () => { showTab('dashboard'); ov.remove(); };
+    $('#m-bookings').onclick = () => { showTab('bookings'); ov.remove(); };
+    $('#m-staff').onclick = () => { showTab('staff'); ov.remove(); };
+    $('#m-logs').onclick = () => { showTab('logs'); ov.remove(); };
+    $('#m-reviews').onclick = () => { showTab('reviews'); ov.remove(); };
+    $('#m-close').onclick = () => ov.remove();
+    // when overlay removed, ensure hamburger returns
+    const obs = new MutationObserver(() => {
+      if (!document.getElementById('mobile-nav-overlay')) {
+        if (ham) ham.classList.remove('open');
+        obs.disconnect();
+      }
+    });
+    obs.observe(document.body, { childList: true, subtree: false });
+  } else {
+    ov.remove();
+    const ham = document.querySelector('#hamburger .hamburger'); if (ham) ham.classList.remove('open');
+  }
+};
 
 // FAB goes to bookings
 $('#fab').onclick = () => { showTab('bookings'); setTimeout(()=> $('#b-name').focus(), 250); };
