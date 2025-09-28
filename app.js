@@ -84,6 +84,7 @@ function addBooking(data) {
     id: (bookings.length ? Math.max(...bookings.map(x => x.id || 0)) + 1 : 1),
     created_at: nowISO(),
     customer_name: data.customer_name || 'Unnamed',
+    phone_number: data.phone_number || '',
     notes: data.notes || '',
     party_size: data.party_size || 1,
     start_time: data.start_time || null,
@@ -92,7 +93,7 @@ function addBooking(data) {
   };
   bookings.unshift(b);
   saveBookings(bookings);
-  addLog({ type: 'info', source: 'Bookings', text: `Booking created: ${b.customer_name}`, timestamp: nowISO() });
+  addLog({ type: 'info', source: 'Bookings', text: `Booking created: ${b.customer_name} (${b.phone_number})`, timestamp: nowISO() });
   return b;
 }
 
@@ -119,7 +120,7 @@ function renderRecentBookings() {
     const el = document.createElement('div');
     el.className = 'p-3 bg-white rounded-xl border border-gray-100 hover:shadow-lg transition-all cursor-pointer';
     el.innerHTML = `<div class="font-semibold text-gray-800">${b.customer_name}</div>
-                    <div class="text-xs text-gray-500">${friendlyDate(b.start_time)} • Party of ${b.party_size}</div>`;
+                    <div class="text-xs text-gray-500">${b.phone_number ? b.phone_number + ' • ' : ''}${friendlyDate(b.start_time)} • Party of ${b.party_size}</div>`;
     el.onclick = () => {
       showNotification(`Selected: ${b.customer_name}`, 'info');
     };
@@ -178,6 +179,7 @@ function renderBookingsList() {
         // simple inline quick edit: fill form and switch to bookings tab
         const b = bookings[idx];
         $('#b-name').value = b.customer_name;
+        $('#b-phone').value = b.phone_number || '';
         $('#b-notes').value = b.notes || '';
         $('#b-party').value = b.party_size || 1;
         $('#b-start').value = b.start_time ? formatDateForInput(b.start_time) : '';
@@ -480,6 +482,7 @@ $('#booking-form').onsubmit = async (ev) => {
   try {
     const payload = {
       customer_name: $('#b-name').value.trim() || 'Guest',
+      phone_number: $('#b-phone').value.trim() || '',
       notes: $('#b-notes').value.trim(),
       party_size: Number($('#b-party').value) || 1,
     };
@@ -512,39 +515,154 @@ $('#booking-form').onsubmit = async (ev) => {
 // voice-fill hooks (simple)
 $('#voice-fill').onclick = () => $('#start-voice').click();
 
-// ---------- Simple voice/TTS (kept minimal) ----------
-let recognition = null;
-$('#start-voice').onclick = () => {
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SpeechRecognition) { showNotification('SpeechRecognition not supported', 'error'); return; }
-  recognition = new SpeechRecognition();
-  recognition.lang = 'en-US';
-  recognition.interimResults = false;
-  recognition.continuous = false;
-  recognition.onstart = () => { $('#recognized').textContent = 'Listening...'; $('#start-voice').textContent = 'Listening...'; };
-  recognition.onresult = async (ev) => {
-    const t = ev.results[0][0].transcript;
-    // show interim in UI
-    const short = t.length > 80 ? t.slice(0,77) + '...' : t;
-    const rEl = document.getElementById('recognized'); if (rEl) rEl.textContent = short;
-    const r2 = document.getElementById('recognized-summary'); if (r2) r2.textContent = short;
+// ---------- Mistral AI Voice Recognition ----------
+let mediaRecorder = null;
+let audioChunks = [];
+let isRecording = false;
 
-    // Try to parse and create a booking from the recognized text
-    try {
-      await createBookingFromSpeech(t);
-    } catch (err) {
-      console.error('Speech booking failed', err);
-      showNotification('Failed to create booking from speech', 'error');
+$('#start-voice').onclick = async () => {
+  if (isRecording) {
+    stopRecording();
+    return;
+  }
+  
+  try {
+    // Check if server is available
+    const healthCheck = await fetch(`${API_BASE}/health`);
+    if (!healthCheck.ok) {
+      showNotification('AI server not available - check if server is running', 'error');
+      return;
+    }
+
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    startRecording(stream);
+  } catch (error) {
+    console.error('Microphone access error:', error);
+    showNotification('Microphone access denied or not available', 'error');
+  }
+};
+
+function startRecording(stream) {
+  audioChunks = [];
+  mediaRecorder = new MediaRecorder(stream, {
+    mimeType: 'audio/webm;codecs=opus'
+  });
+
+  mediaRecorder.ondataavailable = (event) => {
+    if (event.data.size > 0) {
+      audioChunks.push(event.data);
     }
   };
-  recognition.onend = () => { $('#start-voice').textContent = 'Start Listening'; };
-  recognition.onerror = (ev) => { showNotification('Recognition error: ' + ev.error, 'error'); };
-  recognition.start();
-};
-$('#stop-voice').onclick = () => { if (recognition) recognition.stop(); };
+
+  mediaRecorder.onstop = async () => {
+    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+    await processAudioWithMistral(audioBlob);
+    stream.getTracks().forEach(track => track.stop());
+  };
+
+  mediaRecorder.start();
+  isRecording = true;
+  $('#start-voice').textContent = '🔴 Stop Recording';
+  $('#recognized').textContent = 'Recording... Speak your booking request';
+  showNotification('Recording started - speak your booking request', 'info');
+}
+
+function stopRecording() {
+  if (mediaRecorder && isRecording) {
+    mediaRecorder.stop();
+    isRecording = false;
+    $('#start-voice').textContent = 'Start AI Voice';
+    $('#recognized').textContent = 'Processing with Mistral AI...';
+  }
+}
+
+async function processAudioWithMistral(audioBlob) {
+  try {
+    showNotification('Processing audio with Mistral AI...', 'info');
+    
+    const formData = new FormData();
+    formData.append('audio', audioBlob, 'recording.webm');
+
+    const response = await fetch(`${API_BASE}/api/transcribe`, {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!response.ok) {
+      throw new Error('Transcription failed');
+    }
+
+    const result = await response.json();
+    
+    // Display transcription
+    const short = result.transcription.length > 80 ? 
+      result.transcription.slice(0,77) + '...' : result.transcription;
+    $('#recognized').textContent = short;
+    
+    if (result.booking) {
+      // Auto-fill form with parsed booking data
+      await fillBookingFromAI(result.booking, result.transcription);
+    } else {
+      showNotification('Could not parse booking information from speech', 'error');
+    }
+
+  } catch (error) {
+    console.error('Mistral AI processing error:', error);
+    showNotification('AI processing failed: ' + error.message, 'error');
+    $('#recognized').textContent = 'Processing failed';
+  }
+}
+
+async function fillBookingFromAI(bookingData, originalText) {
+  try {
+    // Fill form fields
+    if (bookingData.customer_name) $('#b-name').value = bookingData.customer_name;
+    if (bookingData.phone_number) $('#b-phone').value = bookingData.phone_number;
+    if (bookingData.party_size) $('#b-party').value = bookingData.party_size;
+    if (bookingData.notes) $('#b-notes').value = bookingData.notes;
+    
+    // Handle date/time formatting
+    if (bookingData.date && bookingData.start_time) {
+      const startDateTime = `${bookingData.date}T${bookingData.start_time}`;
+      $('#b-start').value = startDateTime;
+    }
+    
+    if (bookingData.date && bookingData.end_time) {
+      const endDateTime = `${bookingData.date}T${bookingData.end_time}`;
+      $('#b-end').value = endDateTime;
+    }
+
+    // Create the booking automatically
+    const booking = addBooking({
+      customer_name: bookingData.customer_name || 'Guest',
+      phone_number: bookingData.phone_number || '',
+      party_size: bookingData.party_size || 1,
+      start_time: bookingData.date && bookingData.start_time ? 
+        new Date(`${bookingData.date}T${bookingData.start_time}`).toISOString() : null,
+      end_time: bookingData.date && bookingData.end_time ? 
+        new Date(`${bookingData.date}T${bookingData.end_time}`).toISOString() : null,
+      notes: bookingData.notes || ''
+    });
+
+    // Update displays
+    renderRecentBookings();
+    renderBookingsList();
+    renderLogs();
+
+    // Speak confirmation
+    const confirmText = `Booking created for ${booking.customer_name}${booking.phone_number ? ' at ' + booking.phone_number : ''}, party of ${booking.party_size}. ${booking.start_time ? 'Scheduled for ' + new Date(booking.start_time).toLocaleString() : ''}`;
+    speakText(confirmText);
+    showNotification(confirmText, 'success');
+
+  } catch (error) {
+    console.error('Booking creation error:', error);
+    showNotification('Failed to create booking: ' + error.message, 'error');
+  }
+}
+
+$('#stop-voice').onclick = () => stopRecording();
 $('#speak-sample').onclick = async () => {
-  const utter = new SpeechSynthesisUtterance('Hello, this is the manager assistant. Local storage is being checked regularly.');
-  window.speechSynthesis.speak(utter);
+  speakText('Hello, this is the AI-powered restaurant booking assistant. Ready to take your reservation.');
 };
 
 // ---------- Health: actively test localStorage every few seconds ----------
