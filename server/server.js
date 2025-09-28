@@ -5,11 +5,22 @@ const axios = require('axios');
 const FormData = require('form-data');
 const fs = require('fs');
 const path = require('path');
+const twilio = require('twilio');
+const bodyParser = require('body-parser');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 const MISTRAL_API_KEY = process.env.MISTRAL_API_KEY;
+
+// Twilio configuration
+const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID;
+const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN;
+const TWILIO_PHONE_NUMBER = process.env.TWILIO_PHONE_NUMBER;
+const SERVER_URL = process.env.SERVER_URL || `http://localhost:${PORT}`;
+
+const twilioClient = TWILIO_ACCOUNT_SID && TWILIO_AUTH_TOKEN ? 
+  twilio(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN) : null;
 
 // Middleware
 app.use(cors({
