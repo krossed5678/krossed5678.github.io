@@ -38,9 +38,9 @@ function showNotification(msg, type = 'info') {
   setTimeout(() => { n.style.opacity = '0'; setTimeout(()=> n.remove(),300); }, 4500);
 }
 
-// ---------- Client-side only app - no backend needed ----------
-// This app works entirely in the browser when you open index.html
-// All data is stored in localStorage and reviews are simulated
+// ---------- AI-Powered Voice Recognition with Mistral API ----------
+// Server-side AI processing for enhanced voice recognition and booking parsing
+const API_BASE = 'http://localhost:3001'; // Mistral AI server endpoint
 
 // ---------- Local storage utilities ----------
 const LS_KEYS = {

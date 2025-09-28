@@ -292,9 +292,15 @@
               </div>
               
               <form id="booking-form" class="space-y-4">
-                <div>
-                  <label class="block text-sm font-semibold text-gray-700 mb-2">Customer Name</label>
-                  <input id="b-name" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all" placeholder="Enter customer name" />
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Customer Name</label>
+                    <input id="b-name" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all" placeholder="Enter customer name" />
+                  </div>
+                  <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Phone Number</label>
+                    <input id="b-phone" type="tel" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all" placeholder="(555) 123-4567" />
+                  </div>
                 </div>
                 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
