@@ -578,70 +578,121 @@ function stopRecording() {
 
 async function processAudioWithMistral(audioBlob) {
   try {
-    showNotification('Processing audio with Mistral AI...', 'info');
+    console.log('🎵 Starting audio processing with Mistral AI...');
+    console.log('Audio blob details:', {
+      size: audioBlob.size,
+      type: audioBlob.type
+    });
+    
+    showNotification('🤖 Having a conversation with Mistral AI...', 'info');
     
     const formData = new FormData();
     formData.append('audio', audioBlob, 'recording.webm');
+    console.log('📤 Sending audio to server:', `${API_BASE}/api/conversation`);
 
-    const response = await fetch(`${API_BASE}/api/transcribe`, {
+    const response = await fetch(`${API_BASE}/api/conversation`, {
       method: 'POST',
       body: formData
     });
 
+    console.log('📡 Server response status:', response.status);
+    console.log('📡 Server response headers:', Object.fromEntries(response.headers));
+
     if (!response.ok) {
-      throw new Error('Transcription failed');
+      const errorText = await response.text();
+      console.error('❌ Server returned error:', {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorText
+      });
+      throw new Error(`AI conversation failed: ${response.status} ${response.statusText}`);
     }
 
     const result = await response.json();
+    console.log('✅ Received conversation result:', result);
     
-    // Display transcription
+    // Display what customer said
     const short = result.transcription.length > 80 ? 
       result.transcription.slice(0,77) + '...' : result.transcription;
-    $('#recognized').textContent = short;
+    $('#recognized').textContent = `You: ${short}`;
+    console.log('📝 Transcription:', result.transcription);
     
-    if (result.booking) {
-      // Auto-fill form with parsed booking data
-      await fillBookingFromAI(result.booking, result.transcription);
+    // Speak the AI's response
+    if (result.aiResponse) {
+      console.log('🤖 AI Response:', result.aiResponse);
+      await speakAIResponse(result.aiResponse);
     } else {
-      showNotification('Could not parse booking information from speech', 'error');
+      console.warn('⚠️ No AI response received');
+    }
+    
+    // If AI created a booking, handle it
+    if (result.booking && result.action === 'booking_created') {
+      console.log('📝 Booking created:', result.booking);
+      await handleAIBooking(result.booking, result.aiResponse);
+      showNotification('🎉 Booking created by AI!', 'success');
+    } else {
+      console.log('💬 Conversation continues, action:', result.action);
+      // Just show the AI's response as a conversation
+      showNotification(`AI: ${result.aiResponse}`, 'info');
     }
 
   } catch (error) {
-    console.error('Mistral AI processing error:', error);
-    showNotification('AI processing failed: ' + error.message, 'error');
-    $('#recognized').textContent = 'Processing failed';
+    console.error('❌ AI conversation error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
+      cause: error.cause
+    });
+    console.error('❌ Full error object:', error);
+    
+    // Show detailed error to user
+    const errorMsg = `AI conversation failed: ${error.message}`;
+    showNotification(errorMsg, 'error');
+    $('#recognized').textContent = 'AI conversation failed - check console for details';
   }
 }
 
-async function fillBookingFromAI(bookingData, originalText) {
+// Speak AI response using browser TTS
+async function speakAIResponse(text) {
   try {
-    // Fill form fields
-    if (bookingData.customer_name) $('#b-name').value = bookingData.customer_name;
-    if (bookingData.phone_number) $('#b-phone').value = bookingData.phone_number;
-    if (bookingData.party_size) $('#b-party').value = bookingData.party_size;
-    if (bookingData.notes) $('#b-notes').value = bookingData.notes;
+    // Clean up text for better TTS
+    const cleanText = text.replace(/['"]/g, '').replace(/\s+/g, ' ').trim();
     
-    // Handle date/time formatting
-    if (bookingData.date && bookingData.start_time) {
-      const startDateTime = `${bookingData.date}T${bookingData.start_time}`;
-      $('#b-start').value = startDateTime;
-    }
+    // Use browser's built-in TTS (works great!)
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.rate = 0.9;
+    utterance.pitch = 1.0;
+    utterance.volume = 0.8;
     
-    if (bookingData.date && bookingData.end_time) {
-      const endDateTime = `${bookingData.date}T${bookingData.end_time}`;
-      $('#b-end').value = endDateTime;
-    }
+    // Find a good voice (prefer female, English)
+    const voices = speechSynthesis.getVoices();
+    const goodVoice = voices.find(v => 
+      v.lang.includes('en') && v.name.toLowerCase().includes('female')
+    ) || voices.find(v => v.lang.includes('en')) || voices[0];
+    
+    if (goodVoice) utterance.voice = goodVoice;
+    
+    console.log(`🔊 Speaking: "${cleanText}"`);
+    speechSynthesis.speak(utterance);
+    
+  } catch (error) {
+    console.error('TTS error:', error);
+  }
+}
 
-    // Create the booking automatically
+// Handle booking created by AI
+async function handleAIBooking(bookingData, aiResponse) {
+  try {
+    // Create the booking in local storage
     const booking = addBooking({
-      customer_name: bookingData.customer_name || 'Guest',
+      customer_name: bookingData.customer_name || 'AI Guest',
       phone_number: bookingData.phone_number || '',
       party_size: bookingData.party_size || 1,
       start_time: bookingData.date && bookingData.start_time ? 
         new Date(`${bookingData.date}T${bookingData.start_time}`).toISOString() : null,
       end_time: bookingData.date && bookingData.end_time ? 
         new Date(`${bookingData.date}T${bookingData.end_time}`).toISOString() : null,
-      notes: bookingData.notes || ''
+      notes: bookingData.notes || 'Created via AI conversation'
     });
 
     // Update displays
@@ -649,16 +700,15 @@ async function fillBookingFromAI(bookingData, originalText) {
     renderBookingsList();
     renderLogs();
 
-    // Speak confirmation
-    const confirmText = `Booking created for ${booking.customer_name}${booking.phone_number ? ' at ' + booking.phone_number : ''}, party of ${booking.party_size}. ${booking.start_time ? 'Scheduled for ' + new Date(booking.start_time).toLocaleString() : ''}`;
-    speakText(confirmText);
-    showNotification(confirmText, 'success');
+    console.log('📝 AI created booking:', booking);
 
   } catch (error) {
-    console.error('Booking creation error:', error);
-    showNotification('Failed to create booking: ' + error.message, 'error');
+    console.error('Failed to handle AI booking:', error);
+    showNotification('Failed to save AI booking: ' + error.message, 'error');
   }
 }
+
+// Old function removed - now using handleAIBooking() instead
 
 $('#stop-voice').onclick = () => stopRecording();
 $('#speak-sample').onclick = async () => {
@@ -695,6 +745,81 @@ function testLocalStorage() {
     console.warn('localStorage health test failed', e);
   }
   renderHealthCards();
+}
+
+// Check phone system status
+async function checkPhoneSystem() {
+  try {
+    const response = await fetch(`${API_BASE}/health`);
+    if (!response.ok) throw new Error('Server not available');
+    
+    const data = await response.json();
+    const phoneStatus = $('#phone-status');
+    const phoneText = $('#phone-text');
+    const phoneDot = $('#phone-dot');
+    
+    phoneStatus.style.display = 'block';
+    
+    if (data.twilio_configured && data.phone_number) {
+      phoneText.textContent = `📞 Phone bookings: ${data.phone_number}`;
+      phoneDot.className = 'w-2 h-2 bg-green-400 rounded-full animate-pulse';
+      addLog({ type: 'success', source: 'Phone', text: `Phone system ready: ${data.phone_number}`, timestamp: nowISO() });
+    } else {
+      phoneText.textContent = '📞 Phone system not configured';
+      phoneDot.className = 'w-2 h-2 bg-yellow-400 rounded-full animate-pulse';
+      addLog({ type: 'info', source: 'Phone', text: 'Phone system not configured', timestamp: nowISO() });
+    }
+  } catch (error) {
+    const phoneStatus = $('#phone-status');
+    const phoneText = $('#phone-text');
+    const phoneDot = $('#phone-dot');
+    
+    phoneStatus.style.display = 'block';
+    phoneText.textContent = '📞 Phone system offline';
+    phoneDot.className = 'w-2 h-2 bg-red-400 rounded-full animate-pulse';
+    console.warn('Phone system check failed:', error);
+  }
+}
+
+// Load phone bookings
+async function loadPhoneBookings() {
+  try {
+    const response = await fetch(`${API_BASE}/api/bookings`);
+    if (!response.ok) return;
+    
+    const data = await response.json();
+    if (data.bookings && data.bookings.length > 0) {
+      // Merge phone bookings with local bookings
+      const localBookings = getBookings();
+      const phoneBookings = data.bookings.map(b => ({
+        ...b,
+        source: 'phone_call'
+      }));
+      
+      // Combine and sort by creation date
+      const allBookings = [...localBookings, ...phoneBookings]
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      
+      // Update display (don't save phone bookings to localStorage)
+      const recentNode = $('#recent-bookings');
+      recentNode.innerHTML = '';
+      
+      allBookings.slice(0, 6).forEach(b => {
+        const el = document.createElement('div');
+        el.className = `p-3 rounded-xl border border-gray-100 hover:shadow-lg transition-all cursor-pointer ${b.source === 'phone_call' ? 'bg-blue-50 border-blue-200' : 'bg-white'}`;
+        el.innerHTML = `<div class="font-semibold text-gray-800">${b.customer_name} ${b.source === 'phone_call' ? '📞' : ''}</div>
+                        <div class="text-xs text-gray-500">${b.phone_number ? b.phone_number + ' • ' : ''}${friendlyDate(b.start_time || b.created_at)} • Party of ${b.party_size}</div>`;
+        el.onclick = () => {
+          showNotification(`${b.source === 'phone_call' ? 'Phone booking' : 'Web booking'}: ${b.customer_name}`, 'info');
+        };
+        recentNode.appendChild(el);
+      });
+      
+      addLog({ type: 'success', source: 'Phone', text: `Loaded ${data.bookings.length} phone bookings`, timestamp: nowISO() });
+    }
+  } catch (error) {
+    console.warn('Failed to load phone bookings:', error);
+  }
 }
 
 let healthInterval = null;
@@ -838,148 +963,9 @@ function speakText(text) {
   } catch (e) { console.warn('TTS failed', e); }
 }
 
-function parseBookingCommand(text) {
-  if (!text || !text.trim()) return null;
-  const raw = String(text).trim();
-  const lower = raw.toLowerCase();
+// Manual parsing removed - Mistral AI now handles all conversation and booking parsing!
 
-  // determine base date (today / tomorrow)
-  const base = new Date();
-  if (/tomorrow/.test(lower)) base.setDate(base.getDate() + 1);
-
-  // helper: parse a time expression like '9', '9:00', '9 am', '12pm', 'noon', 'midnight', 'in the morning'
-  function parseTimeFragment(fragment, refDate) {
-    fragment = fragment.trim();
-    if (!fragment) return null;
-    const f = fragment.toLowerCase();
-    const d = new Date(refDate.getTime());
-
-    if (/noon/.test(f)) { d.setHours(12,0,0,0); return d; }
-    if (/midnight/.test(f)) { d.setHours(0,0,0,0); return d; }
-
-    // look for explicit hh:mm or hh
-    let m = f.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i);
-    if (m) {
-      let hh = Number(m[1]);
-      const mm = m[2] ? Number(m[2]) : 0;
-      const ampm = m[3];
-      if (ampm) {
-        if (/pm/i.test(ampm) && hh < 12) hh += 12;
-        if (/am/i.test(ampm) && hh === 12) hh = 0;
-      }
-      d.setHours(hh, mm, 0, 0);
-      return d;
-    }
-
-    // phrases: "in the morning" -> assume 9:00, "in the afternoon" -> 15:00, "in the evening" -> 19:00
-    if (/morning/.test(f)) { d.setHours(9,0,0,0); return d; }
-    if (/afternoon/.test(f)) { d.setHours(15,0,0,0); return d; }
-    if (/evening/.test(f)) { d.setHours(19,0,0,0); return d; }
-
-    return null;
-  }
-
-  // name extraction: prefer "my name is X", "this is X", or "this is X and I'd like" patterns
-  let name = null;
-  let m = raw.match(/(?:my name is|this is|i am|i'm)\s+([A-Za-z][A-Za-z'\-\.]+(?:\s+[A-Za-z'\-\.]+){0,3})/i);
-  if (m) name = m[1].trim();
-  if (!name) {
-    // try 'for NAME' but ensure it's not 'for 2 people' or 'for 9 am'
-    m = raw.match(/for\s+([A-Za-z][A-Za-z'\-\.]+(?:\s+[A-Za-z'\-\.]+){0,3})/i);
-    if (m && !/\d/.test(m[1])) name = m[1].trim();
-  }
-  if (!name) name = 'Guest';
-
-  // party size
-  let party = 1;
-  m = raw.match(/party of\s*(\d{1,2})/i) || raw.match(/for\s*(\d{1,2})\s*(people|persons)/i) || raw.match(/(\d{1,2})\s*people/i);
-  if (m) party = Number(m[1]);
-
-  // times: prefer explicit "from X to Y" ranges, else look for single time and optional duration
-  let startDate = null;
-  let endDate = null;
-
-  // look for 'from X to Y' or 'between X and Y'
-  m = raw.match(/(?:from|between)\s+([^,;]+?)\s+(?:to|and)\s+([^,;]+?)(?:\s|\.|,|$)/i);
-  if (m) {
-    const partA = m[1].trim();
-    const partB = m[2].trim();
-    const a = parseTimeFragment(partA, base);
-    const b = parseTimeFragment(partB, base);
-    if (a) startDate = a;
-    if (b) endDate = b;
-  }
-
-  // fallback: look for a single 'at X' or just 'X am/pm' occurrence (take first match)
-  if (!startDate) {
-    m = raw.match(/(?:at\s*)?(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)/i) || raw.match(/(noon|midnight|in the morning|in the afternoon|in the evening)/i);
-    if (m) {
-      const frag = m[1] || m[0];
-      const a = parseTimeFragment(frag, base);
-      if (a) startDate = a;
-    }
-  }
-
-  // if we have a start but no explicit end, try duration e.g. 'for 2 hours' or default +2h
-  if (startDate && !endDate) {
-    m = raw.match(/for\s*(\d+)\s*(hour|hours|hr|hrs)/i) || raw.match(/for\s*(\d+)\s*(min|mins|minute|minutes)/i);
-    if (m) {
-      const val = Number(m[1]);
-      const unit = m[2];
-      const e = new Date(startDate.getTime());
-      if (/hour|hr/.test(unit)) e.setHours(e.getHours() + val);
-      else e.setMinutes(e.getMinutes() + val);
-      endDate = e;
-    } else {
-      const e = new Date(startDate.getTime()); e.setHours(e.getHours() + 3); endDate = e; // default to 3h so edits show a clear range
-    }
-  }
-
-  // final fallback: if neither parsed, set default 19:00-21:00
-  if (!startDate) {
-    const sd = new Date(base.getTime()); sd.setHours(19,0,0,0); startDate = sd;
-  }
-  if (!endDate) {
-    const ed = new Date(startDate.getTime()); ed.setHours(startDate.getHours() + 3, 0, 0, 0); endDate = ed;
-  }
-
-  // ensure end is after start; if not, add 2 hours
-  if (endDate <= startDate) {
-    const ed = new Date(startDate.getTime()); ed.setHours(startDate.getHours() + 2); endDate = ed;
-  }
-
-  return {
-    customer_name: name,
-    party_size: party,
-    start_time: startDate.toISOString(),
-    end_time: endDate.toISOString(),
-    notes: raw
-  };
-}
-
-async function createBookingFromSpeech(text) {
-  const payload = parseBookingCommand(text);
-  if (!payload) {
-    showNotification('Could not parse booking from speech', 'error');
-    return null;
-  }
-
-  // save via existing addBooking (stores into LS_KEYS.BOOKINGS)
-  const b = addBooking(payload);
-  renderRecentBookings(); renderBookingsList(); renderLogs();
-
-  const when = new Date(b.start_time).toLocaleString();
-  const confirmText = `Created booking for ${b.customer_name}, party of ${b.party_size}, on ${when}. Saved locally.`;
-  speakText(confirmText);
-  showNotification(confirmText, 'success');
-
-  // update small UI recognized displays
-  const short = text.length > 80 ? text.slice(0,77) + '...' : text;
-  const rEl = document.getElementById('recognized'); if (rEl) rEl.textContent = short;
-  const r2 = document.getElementById('recognized-summary'); if (r2) r2.textContent = short;
-
-  return b;
-}
+// Old speech booking function removed - now using Mistral AI conversation system!
 
 // Remove legacy DOM table population and duplicate load functions.
 // We rely on renderBookingsList / renderRecentBookings for UI updates.
@@ -987,3 +973,36 @@ async function createBookingFromSpeech(text) {
 // Ensure recognition result handling is safe: when recognition exists, call createBookingFromSpeech
 // (The click handler that creates recognition above will trigger onresult, which will call this.)
 // If recognition is not present, do nothing here.
+
+// =============================================================================
+// APP INITIALIZATION
+// =============================================================================
+
+// Initialize app when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+  // Start health monitoring
+  startHealthChecks();
+  
+  // Load initial data
+  renderRecentBookings();
+  renderBookingsList(); 
+  renderLogs();
+  
+  // Check phone system status
+  checkPhoneSystem();
+  
+  // Load phone bookings periodically
+  loadPhoneBookings();
+  setInterval(loadPhoneBookings, 10000); // Check every 10 seconds
+  
+  // Hide loading indicator
+  const fallback = $('#fallback-visible');
+  if (fallback) fallback.style.display = 'none';
+  
+  // Update status
+  $('#client-text').textContent = 'System Ready';
+  
+  console.log('🚀 Restaurant AI Booking System initialized');
+  console.log('📞 Phone bookings supported via Twilio + Mistral AI');
+  console.log('🎤 Voice recognition available in browser');
+});

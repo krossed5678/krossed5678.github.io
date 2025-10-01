@@ -122,39 +122,26 @@ app.post('/webhooks/process-booking', async (req, res) => {
   }
 
   try {
-    // Download and process the audio with Mistral AI
-    const bookingData = await processPhoneRecording(recordingUrl, callSid);
+    // Process the phone conversation with Mistral AI  
+    const conversationResult = await processPhoneConversation(recordingUrl, callSid, req.body.From);
     
-    if (bookingData && bookingData.success) {
-      // Store the booking
-      const booking = {
-        id: bookings.length + 1,
-        ...bookingData.booking,
-        phone_number: req.body.From,
-        created_via: 'phone_call',
-        call_sid: callSid,
-        created_at: new Date().toISOString()
-      };
-      bookings.push(booking);
-      
+    if (conversationResult && conversationResult.success) {
       // Update call session
       const callSession = activeCalls.get(callSid);
       if (callSession) {
-        callSession.booking = booking;
-        callSession.status = 'confirmed';
+        callSession.conversationResult = conversationResult;
+        callSession.status = conversationResult.action === 'booking_created' ? 'confirmed' : 'processing';
       }
 
-      // Confirm the booking
-      const confirmationMessage = `Perfect! I've created your reservation for ${booking.customer_name || 'your party'} of ${booking.party_size || 'guests'}${booking.start_time ? ` on ${new Date(booking.start_time).toLocaleDateString()} at ${new Date(booking.start_time).toLocaleTimeString()}` : ''}. Your booking confirmation number is ${booking.id}. Thank you for calling!`;
-      
+      // Speak the AI's response
       twiml.say({
         voice: 'alice',
         language: 'en-US'
-      }, confirmationMessage);
+      }, conversationResult.aiResponse);
       
     } else {
-      // Could not process booking
-      twiml.say('I\'m sorry, I had trouble understanding your booking request. Please call back and clearly state your name, party size, and preferred date and time. Thank you.');
+      // Fallback response
+      twiml.say('I apologize, but I\'m having trouble processing your request right now. Please try calling again in a moment.');
     }
     
   } catch (error) {
@@ -202,120 +189,387 @@ app.get('/api/calls', (req, res) => {
   res.json({ activeCalls: calls, totalBookings: bookings.length });
 });
 
-// Mistral AI voice transcription endpoint
-app.post('/api/transcribe', upload.single('audio'), async (req, res) => {
+// Mistral AI conversation endpoint - handles speech-to-text, understanding, and response generation
+app.post('/api/conversation', upload.single('audio'), async (req, res) => {
+  console.log('🎵 === CONVERSATION REQUEST STARTED ===');
+  console.log('Request details:', {
+    method: req.method,
+    url: req.url,
+    headers: req.headers,
+    fileUploaded: !!req.file
+  });
+  
   try {
+    console.log('🔑 Checking Mistral API key...');
     if (!MISTRAL_API_KEY) {
+      console.error('❌ Mistral API key not configured');
       return res.status(500).json({ error: 'Mistral API key not configured' });
     }
+    console.log('✅ Mistral API key found');
 
+    console.log('📁 Checking uploaded file...');
     if (!req.file) {
+      console.error('❌ No audio file provided');
       return res.status(400).json({ error: 'No audio file provided' });
     }
-
-    const audioBuffer = fs.readFileSync(req.file.path);
     
-    // Create form data for Mistral API
+    console.log('📁 File details:', {
+      originalname: req.file.originalname,
+      mimetype: req.file.mimetype,
+      size: req.file.size,
+      path: req.file.path
+    });
+
+    console.log('📖 Reading audio file...');
+    const audioBuffer = fs.readFileSync(req.file.path);
+    console.log('📖 Audio buffer size:', audioBuffer.length, 'bytes');
+    console.log('🎵 Processing audio conversation with Mistral AI...');
+    
+    // Step 1: Convert speech to text using Mistral AI
+    console.log('🎤 Step 1: Converting speech to text...');
     const formData = new FormData();
     formData.append('file', audioBuffer, {
       filename: 'audio.webm',
       contentType: 'audio/webm'
     });
+    formData.append('model', 'whisper-large');
+    
+    console.log('📤 Sending transcription request to Mistral AI...');
+    console.log('Request details:', {
+      url: 'https://api.mistral.ai/v1/audio/transcriptions',
+      model: 'whisper-large',
+      fileSize: audioBuffer.length,
+      hasApiKey: !!MISTRAL_API_KEY
+    });
+
+    const transcriptionResponse = await axios.post('https://api.mistral.ai/v1/audio/transcriptions', formData, {
+      headers: {
+        'Authorization': `Bearer ${MISTRAL_API_KEY}`,
+        ...formData.getHeaders()
+      }
+    }).catch(error => {
+      console.error('❌ Mistral API transcription error details:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        message: error.message,
+        config: {
+          url: error.config?.url,
+          method: error.config?.method
+        }
+      });
+      throw error;
+    });
+    
+    console.log('✅ Transcription response received:', {
+      status: transcriptionResponse.status,
+      data: transcriptionResponse.data
+    });
+
+    const transcription = transcriptionResponse.data.text || '';
+    console.log(`📝 Customer said: "${transcription}"`);
+
+    if (!transcription.trim()) {
+      console.log('⚠️ Empty transcription received');
+      return res.json({
+        success: false,
+        error: 'Could not understand audio',
+        aiResponse: "I'm sorry, I didn't catch that. Could you please repeat your booking request?"
+      });
+    }
+
+    // Step 2: Let Mistral AI handle the entire conversation and booking process
+    console.log('🤖 Step 2: Processing conversation with AI...');
+    const conversationResult = await handleBookingConversation(transcription);
+    console.log('✅ Conversation result:', conversationResult);
+
+    // Clean up uploaded file
+    console.log('🧹 Cleaning up uploaded file...');
+    fs.unlinkSync(req.file.path);
+    console.log('✅ File cleanup complete');
+
+    const response = {
+      success: true,
+      transcription,
+      aiResponse: conversationResult.response,
+      booking: conversationResult.booking,
+      action: conversationResult.action  // 'booking_created', 'need_more_info', 'greeting', etc.
+    };
+    
+    console.log('📤 Sending response to client:', response);
+    console.log('🎵 === CONVERSATION REQUEST COMPLETED ===');
+    res.json(response);
+
+  } catch (error) {
+    console.error('❌ === CONVERSATION ERROR ===');
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
+      code: error.code
+    });
+    
+    if (error.response) {
+      console.error('API Error Response:', {
+        status: error.response.status,
+        statusText: error.response.statusText,
+        data: error.response.data,
+        headers: error.response.headers
+      });
+    }
+    
+    if (error.config) {
+      console.error('Request Config:', {
+        url: error.config.url,
+        method: error.config.method,
+        headers: error.config.headers
+      });
+    }
+
+    // Clean up file if it exists
+    if (req.file && fs.existsSync(req.file.path)) {
+      console.log('🧹 Cleaning up file after error...');
+      fs.unlinkSync(req.file.path);
+    }
+
+    console.error('❌ Conversation error:', error.response?.data || error.message);
+    
+    const errorResponse = { 
+      error: 'AI conversation failed', 
+      details: error.response?.data || error.message,
+      aiResponse: "I'm sorry, I'm having technical difficulties. Please try again in a moment.",
+      debugInfo: {
+        errorType: error.name,
+        errorCode: error.code,
+        timestamp: new Date().toISOString()
+      }
+    };
+    
+    console.log('📤 Sending error response:', errorResponse);
+    console.log('❌ === CONVERSATION ERROR END ===');
+    res.status(500).json(errorResponse);
+  }
+});
+
+// Process phone conversation with Mistral AI - full conversation handling
+async function processPhoneConversation(recordingUrl, callSid, phoneNumber) {
+  try {
+    console.log(`📞 Processing phone conversation: ${recordingUrl}`);
+    
+    // Download the recording from Twilio
+    const response = await axios.get(recordingUrl, {
+      responseType: 'arraybuffer',
+      auth: {
+        username: TWILIO_ACCOUNT_SID,
+        password: TWILIO_AUTH_TOKEN
+      }
+    });
+    
+    const audioBuffer = Buffer.from(response.data);
+    
+    // Create form data for Mistral AI transcription
+    const formData = new FormData();
+    formData.append('file', audioBuffer, {
+      filename: 'phone-recording.wav',
+      contentType: 'audio/wav'
+    });
     formData.append('model', 'whisper-large-v3');
 
-    // Call Mistral AI transcription API
-    const response = await axios.post('https://api.mistral.ai/v1/audio/transcriptions', formData, {
+    console.log('🤖 Converting speech to text with Mistral AI...');
+
+    // Step 1: Speech to text
+    const transcriptionResponse = await axios.post('https://api.mistral.ai/v1/audio/transcriptions', formData, {
       headers: {
         'Authorization': `Bearer ${MISTRAL_API_KEY}`,
         ...formData.getHeaders()
       }
     });
 
-    // Clean up uploaded file
-    fs.unlinkSync(req.file.path);
-
-    const transcription = response.data.text || '';
+    const transcription = transcriptionResponse.data.text || '';
+    console.log(`📝 Customer said: "${transcription}"`);
     
-    // Parse booking information from transcription using Mistral Chat API
-    const bookingInfo = await parseBookingWithMistral(transcription);
-
-    res.json({
-      transcription,
-      booking: bookingInfo,
-      success: true
-    });
-
-  } catch (error) {
-    // Clean up file if it exists
-    if (req.file && fs.existsSync(req.file.path)) {
-      fs.unlinkSync(req.file.path);
+    if (!transcription.trim()) {
+      return { 
+        success: true, 
+        aiResponse: "I'm sorry, I didn't catch that. Could you please repeat your booking request?",
+        action: 'need_repeat'
+      };
     }
 
-    console.error('Transcription error:', error.response?.data || error.message);
-    res.status(500).json({ 
-      error: 'Transcription failed', 
-      details: error.response?.data || error.message 
-    });
+    // Step 2: Let Mistral AI handle the conversation and booking
+    const conversationResult = await handleBookingConversation(transcription);
+    
+    // Add phone number to booking if one was created
+    if (conversationResult.booking) {
+      conversationResult.booking.phone_number = phoneNumber;
+      conversationResult.booking.created_via = 'phone_call';
+      conversationResult.booking.call_sid = callSid;
+    }
+    
+    return {
+      success: true,
+      transcription,
+      aiResponse: conversationResult.response,
+      booking: conversationResult.booking,
+      action: conversationResult.action
+    };
+
+  } catch (error) {
+    console.error('❌ Phone conversation processing error:', error.response?.data || error.message);
+    return { 
+      success: false, 
+      error: error.response?.data || error.message,
+      aiResponse: "I apologize, but I'm experiencing technical difficulties. Please try calling again in a moment."
+    };
   }
-});
+}
 
-// Parse booking information using Mistral Chat API
-async function parseBookingWithMistral(text) {
+// Handle full booking conversation with Mistral AI - no manual parsing needed!
+async function handleBookingConversation(customerSpeech) {
+  console.log('🤖 === HANDLING BOOKING CONVERSATION ===');
+  console.log('Customer speech:', customerSpeech);
+  
   try {
-    const prompt = `Parse the following restaurant booking request and extract the information in JSON format. 
-    Return ONLY valid JSON with these fields: customer_name, phone_number, party_size, date, start_time, end_time, notes.
-    For times, use 24-hour format (HH:MM). For date, use YYYY-MM-DD format. If today is mentioned, use today's date.
-    If information is missing, use null for that field.
-    
-    Text: "${text}"
-    
-    Example response:
-    {
-      "customer_name": "John Smith",
-      "phone_number": "555-123-4567",
-      "party_size": 4,
-      "date": "2024-03-15", 
-      "start_time": "19:00",
-      "end_time": "21:00",
-      "notes": "Anniversary dinner"
-    }`;
+    console.log('📝 Building system prompt...');
+    const systemPrompt = `You are a professional restaurant booking assistant AI. Your job is to:
 
-    const response = await axios.post('https://api.mistral.ai/v1/chat/completions', {
-      model: 'mistral-medium',
+1. Understand customer booking requests from speech
+2. Extract booking details when available
+3. Create bookings when you have enough information  
+4. Ask for missing information politely
+5. Confirm bookings clearly
+6. Be friendly and professional
+
+Current date/time: ${new Date().toISOString()}
+
+When you have enough booking information, respond with:
+BOOKING_DATA: {JSON with customer_name, phone_number, party_size, date, start_time, end_time, notes}
+
+Always end your response with a natural, friendly message to speak back to the customer.
+
+Example responses:
+- "Perfect! I've created your reservation for John Smith, party of 4, tomorrow at 7 PM. Your confirmation number will be provided shortly. Thank you for choosing our restaurant!"
+- "I'd be happy to help you make a reservation! I heard you'd like a table, but could you please tell me your name, how many people, and what date and time you prefer?"
+- "Great! I have a table for 2 people. Could you please tell me your preferred date and time, and a phone number for the reservation?"`;
+
+    console.log('🚀 Sending chat completion request to Mistral AI...');
+    const requestPayload = {
+      model: 'mistral-large-latest',
       messages: [
         {
-          role: 'user',
-          content: prompt
+          role: 'system',
+          content: systemPrompt
+        },
+        {
+          role: 'user', 
+          content: `Customer said: "${customerSpeech}"`
         }
       ],
-      temperature: 0.1
-    }, {
+      temperature: 0.3,
+      max_tokens: 500
+    };
+    
+    console.log('📤 Chat request payload:', JSON.stringify(requestPayload, null, 2));
+    
+    const response = await axios.post('https://api.mistral.ai/v1/chat/completions', requestPayload, {
       headers: {
         'Authorization': `Bearer ${MISTRAL_API_KEY}`,
         'Content-Type': 'application/json'
       }
+    }).catch(error => {
+      console.error('❌ Mistral API chat error details:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        message: error.message,
+        requestUrl: error.config?.url
+      });
+      throw error;
+    });
+    
+    console.log('✅ Chat completion response received:', {
+      status: response.status,
+      choices: response.data?.choices?.length
     });
 
     const aiResponse = response.data.choices[0].message.content;
+    console.log(`🤖 AI Response: "${aiResponse}"`);
     
-    try {
-      // Extract JSON from response (in case AI adds extra text)
-      const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        return JSON.parse(jsonMatch[0]);
+    // Check if AI created booking data
+    console.log('🔍 Checking for booking data in AI response...');
+    let booking = null;
+    let action = 'conversation';
+    
+    const bookingMatch = aiResponse.match(/BOOKING_DATA:\s*(\{[^}]*\})/);
+    if (bookingMatch) {
+      console.log('📝 Found booking data in response:', bookingMatch[1]);
+      try {
+        booking = JSON.parse(bookingMatch[1]);
+        action = 'booking_created';
+        console.log('✅ Successfully parsed booking:', booking);
+        
+        // Store the booking
+        const newBooking = {
+          id: bookings.length + 1,
+          ...booking,
+          created_at: new Date().toISOString(),
+          created_via: 'ai_conversation'
+        };
+        bookings.push(newBooking);
+        console.log('📝 Booking stored in memory:', newBooking);
+      } catch (parseError) {
+        console.error('❌ Failed to parse booking JSON:', parseError);
+        console.error('Raw booking data:', bookingMatch[1]);
       }
-    } catch (parseError) {
-      console.error('JSON parse error:', parseError);
+    } else {
+      console.log('ℹ️ No booking data found in AI response');
     }
+    
+    // Clean the response (remove BOOKING_DATA part)
+    const cleanResponse = aiResponse.replace(/BOOKING_DATA:\s*\{[^}]*\}/, '').trim();
+    console.log('🧹 Cleaned response:', cleanResponse);
+    
+    const result = {
+      response: cleanResponse,
+      booking: booking,
+      action: action
+    };
+    
+    console.log('🤖 === BOOKING CONVERSATION RESULT ===');
+    console.log('Final result:', result);
+    console.log('🤖 === END BOOKING CONVERSATION ===');
+    
+    return result;
 
-    return null;
   } catch (error) {
-    console.error('Mistral parsing error:', error.response?.data || error.message);
-    return null;
+    console.error('❌ === BOOKING CONVERSATION ERROR ===');
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
+      code: error.code
+    });
+    
+    if (error.response) {
+      console.error('API Error Response:', {
+        status: error.response.status,
+        statusText: error.response.statusText,
+        data: error.response.data
+      });
+    }
+    
+    console.error('❌ Mistral conversation error:', error.response?.data || error.message);
+    console.error('❌ === END BOOKING CONVERSATION ERROR ===');
+    
+    return {
+      response: "I apologize, but I'm having trouble processing your request right now. Please try again in a moment, or feel free to call us directly.",
+      booking: null,
+      action: 'error'
+    };
   }
 }
 
-// Text-to-speech endpoint using Mistral (if available) or fallback
+// Text-to-speech endpoint - returns text for browser TTS
 app.post('/api/speak', async (req, res) => {
   try {
     const { text } = req.body;
@@ -324,17 +578,27 @@ app.post('/api/speak', async (req, res) => {
       return res.status(400).json({ error: 'No text provided' });
     }
 
-    // For now, return success - client will handle TTS with browser API
-    // You can integrate Mistral TTS here when available
+    // Clean up the text for better TTS pronunciation
+    const cleanText = text
+      .replace(/['"]/g, '') // Remove quotes
+      .replace(/\s+/g, ' ') // Normalize whitespace
+      .trim();
+
+    console.log(`🔊 TTS Request: "${cleanText}"`);
+
+    // Return text for browser's built-in TTS (works great and is free!)
     res.json({ 
       success: true, 
-      message: 'Use browser TTS for now',
-      text: text
+      text: cleanText,
+      message: 'Ready for browser TTS'
     });
 
   } catch (error) {
-    console.error('TTS error:', error);
-    res.status(500).json({ error: 'TTS failed' });
+    console.error('❌ TTS error:', error);
+    res.status(500).json({ 
+      error: 'TTS failed',
+      text: 'I apologize, but I cannot speak right now.'
+    });
   }
 });
 
@@ -346,8 +610,25 @@ if (!fs.existsSync(uploadsDir)) {
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
-  console.log(`📡 Mistral API configured: ${!!MISTRAL_API_KEY}`);
+  console.log(`📡 Mistral AI configured: ${!!MISTRAL_API_KEY}`);
+  console.log(`📞 Twilio configured: ${!!twilioClient}`);
+  
+  if (TWILIO_PHONE_NUMBER && twilioClient) {
+    console.log(`📲 Phone bookings available at: ${TWILIO_PHONE_NUMBER}`);
+    console.log(`🔗 Webhook URL for Twilio: ${SERVER_URL}/webhooks/voice`);
+  }
+  
   if (!MISTRAL_API_KEY) {
     console.log('⚠️  Add MISTRAL_API_KEY to .env file to enable AI features');
   }
+  
+  if (!twilioClient) {
+    console.log('⚠️  Add Twilio credentials to .env file to enable phone bookings');
+  }
+  
+  console.log('\n📋 Setup Instructions:');
+  console.log('1. Add your Mistral AI API key to .env');
+  console.log('2. Get Twilio account and add credentials to .env');  
+  console.log('3. Configure Twilio webhook URL in Twilio Console');
+  console.log('4. Customers can call your Twilio number to make bookings!');
 });

@@ -413,11 +413,19 @@
       </button>
     </div>
 
-    <!-- Status Indicator -->
+    <!-- Status Indicators -->
     <div id="client-status" class="fixed bottom-6 left-6 glass-dark text-white px-4 py-2 rounded-xl text-sm font-medium z-50 animate-fade-in">
       <div class="flex items-center space-x-2">
         <div id="client-dot" class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
         <span id="client-text">Initializing...</span>
+      </div>
+    </div>
+    
+    <!-- Phone Status Indicator -->
+    <div id="phone-status" class="fixed bottom-6 left-60 glass-dark text-white px-4 py-2 rounded-xl text-sm font-medium z-50 animate-fade-in" style="display: none;">
+      <div class="flex items-center space-x-2">
+        <div id="phone-dot" class="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+        <span id="phone-text">📞 Checking phone system...</span>
       </div>
     </div>
 
