@@ -232,7 +232,7 @@ app.post('/api/conversation', upload.single('audio'), async (req, res) => {
       filename: 'audio.webm',
       contentType: 'audio/webm'
     });
-    formData.append('model', 'whisper-large');
+    formData.append('model', 'whisper-large-v3');
     
     console.log('📤 Sending transcription request to Mistral AI...');
     console.log('Request details:', {

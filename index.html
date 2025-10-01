@@ -178,17 +178,11 @@
                 </div>
                 
                 <div class="flex flex-wrap gap-3 mb-4">
-                  <button id="start-voice" class="btn-premium px-4 py-2 text-white rounded-lg font-medium flex items-center">
-                    <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.293l-3-3a1 1 0 00-1.414 1.414L10.586 9.5 9.293 8.207a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4a1 1 0 00-1.414-1.414L11 9.586l-1.293-1.293z" clip-rule="evenodd"/>
+                  <button id="start-voice" class="btn-premium px-4 py-2 text-white rounded-lg font-medium flex items-center transition-all duration-200">
+                    <svg id="voice-icon" class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clip-rule="evenodd"/>
                     </svg>
-                    Start Listening
-                  </button>
-                  <button id="stop-voice" class="px-4 py-2 bg-red-500 text-white rounded-lg font-medium hover:bg-red-600 transition-colors flex items-center">
-                    <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clip-rule="evenodd"/>
-                    </svg>
-                    Stop
+                    <span id="voice-text">Start Listening</span>
                   </button>
                   <button id="speak-sample" class="px-4 py-2 bg-indigo-500 text-white rounded-lg font-medium hover:bg-indigo-600 transition-colors flex items-center">
                     <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
@@ -429,6 +423,15 @@
       </div>
     </div>
 
+  <!-- Modular JavaScript Files -->
+  <script src="js/ui-manager.js" defer></script>
+  <script src="js/audio-recorder.js" defer></script>
+  <script src="js/api-client.js" defer></script>
+  <script src="js/voice-conversation.js" defer></script>
+  <script src="js/booking-manager.js" defer></script>
+  <script src="js/app-main.js" defer></script>
+  
+  <!-- Legacy app.js for any remaining functionality -->
   <script src="app.js" defer></script>
   </body>
 </html>
