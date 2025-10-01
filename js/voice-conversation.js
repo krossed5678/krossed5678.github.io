@@ -6,6 +6,25 @@ class VoiceConversation {
     this.apiClient = apiClient;
     this.audioRecorder = new AudioRecorder();
     this.isProcessing = false;
+    this.speechRecognition = null;
+    this.preferBrowserSpeech = true; // Try browser speech first
+  }
+
+  // Initialize browser speech recognition
+  initSpeechRecognition() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      console.log('⚠️ Browser speech recognition not supported');
+      return false;
+    }
+
+    this.speechRecognition = new SpeechRecognition();
+    this.speechRecognition.continuous = false;
+    this.speechRecognition.interimResults = false;
+    this.speechRecognition.lang = 'en-US';
+    
+    console.log('🗣️ Browser speech recognition initialized');
+    return true;
   }
 
   async processConversation(audioBlob) {
@@ -116,6 +135,92 @@ class VoiceConversation {
     }
   }
 
+  // Use browser speech recognition for transcription
+  async useBrowserSpeechRecognition() {
+    console.log('🗣️ Starting browser speech recognition...');
+    
+    if (!this.initSpeechRecognition()) {
+      throw new Error('Browser speech recognition not supported');
+    }
+
+    return new Promise((resolve, reject) => {
+      UIManager.updateElement('recognized', 'Listening... Speak your booking request');
+      UIManager.showNotification('Listening - speak your booking request', 'info');
+
+      this.speechRecognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        console.log('🗣️ Browser speech result:', transcript);
+        UIManager.updateElement('recognized', `You: ${transcript}`);
+        resolve(transcript);
+      };
+
+      this.speechRecognition.onerror = (event) => {
+        console.error('❌ Speech recognition error:', event.error);
+        reject(new Error(`Speech recognition failed: ${event.error}`));
+      };
+
+      this.speechRecognition.onend = () => {
+        console.log('🗣️ Speech recognition ended');
+      };
+
+      this.speechRecognition.start();
+    });
+  }
+
+  // Process transcription text with Mistral AI for conversation
+  async processTranscription(transcript) {
+    console.log('🤖 Processing transcription with Mistral AI:', transcript);
+    
+    if (this.isProcessing) {
+      console.log('⚠️ Already processing, skipping...');
+      return;
+    }
+
+    this.isProcessing = true;
+    
+    try {
+      UIManager.showNotification('🤖 Having a conversation with Mistral AI...', 'info');
+      
+      // Send text directly to server for Mistral processing
+      const result = await this.apiClient.sendTextConversation(transcript);
+      
+      // Display what customer said  
+      const short = transcript.length > 80 ? transcript.slice(0,77) + '...' : transcript;
+      UIManager.updateElement('recognized', `You: ${short}`);
+      
+      // Speak the AI's response
+      if (result.aiResponse) {
+        console.log('🤖 AI Response:', result.aiResponse);
+        await this.speakResponse(result.aiResponse);
+      }
+      
+      // Handle booking if created
+      if (result.booking && result.action === 'booking_created') {
+        console.log('📝 Booking created:', result.booking);
+        await this.handleBookingCreated(result.booking, result.aiResponse);
+        UIManager.showNotification('🎉 Booking created by AI!', 'success');
+        
+        // Log AI booking creation
+        if (window.legacyFeatures) {
+          window.legacyFeatures.addLog({
+            type: 'success',
+            source: 'AI Booking',
+            text: `AI created booking: ${result.booking.customer_name} - "${transcript.slice(0, 50)}..."`
+          });
+        }
+      } else {
+        console.log('💬 Conversation continues, action:', result.action);
+        UIManager.showNotification(`AI: ${result.aiResponse}`, 'info');
+      }
+
+    } catch (error) {
+      console.error('❌ Error processing transcription:', error);
+      UIManager.showNotification('Failed to process your request: ' + error.message, 'error');
+    } finally {
+      this.isProcessing = false;
+    }
+  }
+
   async startVoiceConversation() {
     console.log('🎤 Voice button clicked');
     
@@ -129,7 +234,31 @@ class VoiceConversation {
     try {
       // Check if server is available
       await this.apiClient.checkHealth();
+      
+      // Try browser speech recognition first (more reliable)
+      if (this.preferBrowserSpeech && (window.SpeechRecognition || window.webkitSpeechRecognition)) {
+        console.log('🗣️ Using browser speech recognition');
+        UIManager.updateVoiceButton(true);
+        
+        try {
+          const transcript = await this.useBrowserSpeechRecognition();
+          UIManager.updateVoiceButton(false);
+          
+          // Process the transcription with Mistral AI
+          await this.processTranscription(transcript);
+          return;
+          
+        } catch (speechError) {
+          console.log('⚠️ Browser speech recognition failed, falling back to server processing:', speechError.message);
+          UIManager.showNotification('Browser speech failed, trying server processing...', 'info');
+        }
+        
+        UIManager.updateVoiceButton(false);
+      }
 
+      // Fallback: Server-side audio processing
+      console.log('🎤 Using server-side audio processing');
+      
       // Request microphone access
       const stream = await this.audioRecorder.requestMicrophoneAccess();
       

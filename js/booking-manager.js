@@ -131,6 +131,15 @@ class BookingManager {
       UIManager.hideLoader();
       UIManager.showNotification('Booking created successfully!', 'success');
       
+      // Log the booking creation
+      if (window.legacyFeatures) {
+        window.legacyFeatures.addLog({
+          type: 'success',
+          source: 'Manual Booking',
+          text: `Booking created: ${booking.customer_name} (${booking.phone_number || 'No phone'}) - Party of ${booking.party_size}`
+        });
+      }
+      
     } catch (error) {
       console.error('❌ Error creating manual booking:', error);
       UIManager.hideLoader();

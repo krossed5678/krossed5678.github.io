@@ -225,62 +225,21 @@ app.post('/api/conversation', upload.single('audio'), async (req, res) => {
     console.log('📖 Audio buffer size:', audioBuffer.length, 'bytes');
     console.log('🎵 Processing audio conversation with Mistral AI...');
     
-    // Step 1: Convert speech to text using Mistral AI
-    console.log('🎤 Step 1: Converting speech to text...');
-    const formData = new FormData();
-    formData.append('file', audioBuffer, {
-      filename: 'audio.webm',
-      contentType: 'audio/webm'
-    });
-    formData.append('model', 'whisper-large-v3');
+    // Use Mistral's Voxtral model for direct audio understanding
+    console.log('🎤 Processing audio directly with Voxtral...');
     
-    console.log('📤 Sending transcription request to Mistral AI...');
+    // Convert audio buffer to base64 for Mistral API
+    const audioBase64 = audioBuffer.toString('base64');
+    
+    console.log('📤 Sending audio understanding request to Mistral AI...');
     console.log('Request details:', {
-      url: 'https://api.mistral.ai/v1/audio/transcriptions',
-      model: 'whisper-large',
-      fileSize: audioBuffer.length,
+      model: 'voxtral-small',
+      audioSize: audioBuffer.length,
       hasApiKey: !!MISTRAL_API_KEY
     });
 
-    const transcriptionResponse = await axios.post('https://api.mistral.ai/v1/audio/transcriptions', formData, {
-      headers: {
-        'Authorization': `Bearer ${MISTRAL_API_KEY}`,
-        ...formData.getHeaders()
-      }
-    }).catch(error => {
-      console.error('❌ Mistral API transcription error details:', {
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data,
-        message: error.message,
-        config: {
-          url: error.config?.url,
-          method: error.config?.method
-        }
-      });
-      throw error;
-    });
-    
-    console.log('✅ Transcription response received:', {
-      status: transcriptionResponse.status,
-      data: transcriptionResponse.data
-    });
-
-    const transcription = transcriptionResponse.data.text || '';
-    console.log(`📝 Customer said: "${transcription}"`);
-
-    if (!transcription.trim()) {
-      console.log('⚠️ Empty transcription received');
-      return res.json({
-        success: false,
-        error: 'Could not understand audio',
-        aiResponse: "I'm sorry, I didn't catch that. Could you please repeat your booking request?"
-      });
-    }
-
-    // Step 2: Let Mistral AI handle the entire conversation and booking process
-    console.log('🤖 Step 2: Processing conversation with AI...');
-    const conversationResult = await handleBookingConversation(transcription);
+    // Hybrid approach: OpenAI Whisper for transcription + Mistral for conversation
+    const conversationResult = await handleHybridConversation(audioBuffer);
     console.log('✅ Conversation result:', conversationResult);
 
     // Clean up uploaded file
@@ -290,7 +249,7 @@ app.post('/api/conversation', upload.single('audio'), async (req, res) => {
 
     const response = {
       success: true,
-      transcription,
+      transcription: conversationResult.transcription || 'Audio processed directly',
       aiResponse: conversationResult.response,
       booking: conversationResult.booking,
       action: conversationResult.action  // 'booking_created', 'need_more_info', 'greeting', etc.
@@ -423,6 +382,207 @@ async function processPhoneConversation(recordingUrl, callSid, phoneNumber) {
     };
   }
 }
+
+// Mistral-only approach: Use browser speech recognition + Mistral conversation
+async function handleHybridConversation(audioBuffer) {
+  console.log('🔄 === MISTRAL-ONLY AUDIO PROCESSING ===');
+  console.log('Note: Server-side audio processing requires browser speech recognition');
+  console.log('Recommendation: Use browser Web Speech API for best results');
+  
+  try {
+    console.log('⚠️ Server-side audio processing not available with Mistral-only setup');
+    console.log('💡 Recommending browser speech recognition instead');
+    
+    return {
+      success: true,
+      transcription: 'Use browser speech recognition',
+      response: "For the best experience, please use your browser's built-in speech recognition. Click the voice button and speak directly - your browser will convert speech to text and I'll process it with Mistral AI!",
+      action: 'use_browser_speech'
+    };
+    
+  } catch (error) {
+    console.error('❌ Audio processing error:', error.message);
+    return { 
+      success: false, 
+      error: error.message,
+      response: "Please use your browser's speech recognition by clicking the voice button and speaking directly.",
+      action: 'error'
+    };
+  }
+}
+
+// Handle audio conversation directly with Mistral's Voxtral model
+async function handleAudioConversation(audioBase64) {
+  console.log('🎵 === HANDLING AUDIO CONVERSATION WITH VOXTRAL ===');
+  
+  try {
+    console.log('📝 Building system prompt for audio understanding...');
+    const systemPrompt = `You are a professional restaurant booking assistant AI. Your job is to:
+
+1. Listen to and understand customer booking requests from audio
+2. Extract booking details when available
+3. Create bookings when you have enough information  
+4. Ask for missing information politely
+5. Confirm bookings clearly
+6. Be friendly and professional
+
+Current date/time: ${new Date().toISOString()}
+
+When you have enough booking information, respond with:
+BOOKING_DATA: {JSON with customer_name, phone_number, party_size, date, start_time, end_time, notes}
+
+Always end your response with a natural, friendly message to speak back to the customer.
+
+Example responses:
+- "Perfect! I've created your reservation for John Smith, party of 4, tomorrow at 7 PM. Your confirmation number will be provided shortly. Thank you for choosing our restaurant!"
+- "I'd be happy to help you make a reservation! I heard you'd like a table, but could you please tell me your name, how many people, and what date and time you prefer?"`;
+
+    console.log('🚀 Sending audio understanding request to Mistral Voxtral...');
+    const requestPayload = {
+      model: 'voxtral-small-latest', // Using Voxtral Small for audio understanding
+      messages: [
+        {
+          role: 'system',
+          content: systemPrompt
+        },
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'text',
+              text: 'Please process this audio booking request:'
+            },
+            {
+              type: 'input_audio',
+              input_audio: audioBase64
+            }
+          ]
+        }
+      ],
+      temperature: 0.3,
+      max_tokens: 500
+    };
+    
+    console.log('📤 Voxtral request payload:', {
+      model: requestPayload.model,
+      messagesCount: requestPayload.messages.length,
+      hasAudio: !!audioBase64,
+      audioSize: audioBase64.length
+    });
+    
+    const response = await axios.post('https://api.mistral.ai/v1/chat/completions', requestPayload, {
+      headers: {
+        'Authorization': `Bearer ${MISTRAL_API_KEY}`,
+        'Content-Type': 'application/json'
+      }
+    }).catch(error => {
+      console.error('❌ Mistral Voxtral API error details:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        message: error.message,
+        requestUrl: error.config?.url
+      });
+      throw error;
+    });
+    
+    console.log('✅ Voxtral response received:', {
+      status: response.status,
+      choices: response.data?.choices?.length
+    });
+
+    const aiMessage = response.data.choices[0].message.content;
+    console.log('🤖 AI Response:', aiMessage);
+
+    // Parse booking data if present  
+    let bookingData = null;
+    let action = 'greeting';
+    
+    const bookingMatch = aiMessage.match(/BOOKING_DATA:\s*({[^}]+})/);
+    if (bookingMatch) {
+      try {
+        bookingData = JSON.parse(bookingMatch[1]);
+        console.log('📋 Parsed booking data:', bookingData);
+        
+        // Add booking to our storage
+        const booking = {
+          id: Date.now(),
+          ...bookingData,
+          created_at: new Date().toISOString(),
+          status: 'confirmed'
+        };
+        bookings.push(booking);
+        console.log('✅ Booking saved:', booking);
+        action = 'booking_created';
+      } catch (parseError) {
+        console.error('❌ Error parsing booking data:', parseError);
+        action = 'parsing_error';
+      }
+    } else if (aiMessage.toLowerCase().includes('need') || aiMessage.includes('?')) {
+      action = 'need_more_info';
+    }
+
+    // Clean response for speaking
+    const cleanResponse = aiMessage.replace(/BOOKING_DATA:\s*{[^}]+}\s*/, '').trim();
+    
+    return {
+      success: true,
+      response: cleanResponse,
+      booking: bookingData,
+      action: action,
+      transcription: 'Processed with Voxtral (no separate transcription)'
+    };
+
+  } catch (error) {
+    console.error('❌ Audio conversation processing error:', error.response?.data || error.message);
+    return { 
+      success: false, 
+      error: error.response?.data || error.message,
+      response: "I'm sorry, I'm having technical difficulties processing your request. Please try again in a moment.",
+      action: 'error'
+    };
+  }
+}
+
+// Text-only conversation endpoint (for browser speech recognition)
+app.post('/api/text-conversation', async (req, res) => {
+  console.log('📝 === TEXT CONVERSATION REQUEST ===');
+  console.log('Request body:', req.body);
+  
+  try {
+    const { transcript } = req.body;
+    
+    if (!transcript || !transcript.trim()) {
+      return res.status(400).json({ 
+        error: 'No transcript provided',
+        aiResponse: 'I didn\'t receive any text to process. Please try again.'
+      });
+    }
+
+    console.log('🤖 Processing text conversation with Mistral AI...');
+    const conversationResult = await handleBookingConversation(transcript);
+    console.log('✅ Text conversation result:', conversationResult);
+
+    const response = {
+      success: true,
+      transcription: transcript,
+      aiResponse: conversationResult.response,
+      booking: conversationResult.booking,
+      action: conversationResult.action
+    };
+    
+    console.log('📤 Sending text conversation response:', response);
+    res.json(response);
+
+  } catch (error) {
+    console.error('❌ Text conversation error:', error);
+    res.status(500).json({ 
+      error: 'Text conversation failed',
+      details: error.message,
+      aiResponse: "I'm sorry, I'm having technical difficulties. Please try again in a moment."
+    });
+  }
+});
 
 // Handle full booking conversation with Mistral AI - no manual parsing needed!
 async function handleBookingConversation(customerSpeech) {

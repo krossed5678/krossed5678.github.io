@@ -74,6 +74,36 @@ class APIClient {
     }
   }
 
+  // Send text conversation (from browser speech recognition)
+  async sendTextConversation(transcript) {
+    console.log('📝 Sending text conversation to server:', transcript);
+    
+    try {
+      const response = await fetch(`${this.baseURL}/api/text-conversation`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ transcript })
+      });
+
+      console.log('📡 Server response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Server error:', errorText);
+        throw new Error(`Server error: ${response.status} - ${errorText}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ Received text conversation result:', result);
+      return result;
+    } catch (error) {
+      console.error('❌ Text conversation error:', error);
+      throw error;
+    }
+  }
+
   async getBookings() {
     try {
       const response = await fetch(`${this.baseURL}/api/bookings`);
