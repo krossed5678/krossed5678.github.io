@@ -3,9 +3,28 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Manager Assistant — Premium</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="style.css">
+    
+    <!-- SEO and Security Meta Tags -->
+    <title>Manager Assistant — Premium Restaurant AI System</title>
+    <meta name="description" content="Advanced AI restaurant assistant with voice recognition, booking management, and comprehensive customer service capabilities." />
+    <meta name="keywords" content="restaurant AI, voice assistant, booking system, customer service, restaurant management" />
+    <meta name="robots" content="index, follow" />
+    <meta name="author" content="Restaurant AI Solutions" />
+    
+    <!-- Security Headers -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <meta http-equiv="X-Frame-Options" content="DENY" />
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block" />
+    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
+    
+    <!-- PWA Support -->
+    <meta name="theme-color" content="#4f46e5" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    
+    <!-- Local Styling (No External Dependencies) -->
+    <link rel="stylesheet" href="style.css">
   </head>
   <body class="min-h-screen">
     <!-- Animated Background Pattern -->
@@ -540,6 +559,15 @@
         <span id="phone-text">📞 Checking phone system...</span>
       </div>
     </div>
+
+  <!-- Production Infrastructure (Load First) -->
+  <script src="js/production-error-handler.js"></script>
+  <script src="js/security-manager.js"></script>
+  <script src="js/browser-compatibility.js"></script>
+  <script src="js/performance-manager.js"></script>
+  <script src="js/data-manager.js"></script>
+  <script src="js/analytics-manager.js"></script>
+  <script src="js/production-debug-console.js"></script>
 
   <!-- Modular JavaScript Files -->
   <script src="js/ui-manager.js" defer></script>
