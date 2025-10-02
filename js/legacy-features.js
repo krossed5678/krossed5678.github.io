@@ -188,6 +188,9 @@ class LegacyFeatures {
       case 'staff':
         this.renderStaff();
         break;
+      case 'social':
+        this.initializeSocial();
+        break;
       default:
         console.log(`No specific initialization for tab: ${tabName}`);
     }
@@ -252,6 +255,39 @@ class LegacyFeatures {
         <p class="text-sm">Staff management features coming soon</p>
       </div>
     `;
+  }
+
+  // ---------- Social Media Management ----------
+  initializeSocial() {
+    console.log('📱 Initializing Social Media tab...');
+    
+    // Initialize social media manager if available
+    if (window.socialMediaManager) {
+      window.socialMediaManager.renderContentLibrary();
+      window.socialMediaManager.renderScheduledPosts();
+      window.socialMediaManager.renderSocialComments();
+      
+      // Update content count
+      const library = window.socialMediaManager.getContentLibrary();
+      const contentCountEl = document.getElementById('content-count');
+      if (contentCountEl) {
+        contentCountEl.textContent = library.length;
+      }
+      
+      // Update pending comments count
+      const comments = window.socialMediaManager.getSocialComments();
+      const pendingCount = comments.filter(c => c.status === 'pending').length;
+      const pendingEl = document.getElementById('pending-comments');
+      if (pendingEl) {
+        pendingEl.textContent = pendingCount;
+      }
+    }
+    
+    this.addLog({
+      type: 'info',
+      source: 'Social Media',
+      text: 'Social Media tab initialized'
+    });
   }
 }
 

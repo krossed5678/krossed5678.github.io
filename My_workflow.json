@@ -1,0 +1,597 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "filter": {},
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        80,
+        -180
+      ],
+      "id": "f4cecce1-bcbf-483e-882b-44a8cdd00639",
+      "name": "ContentFolder"
+    },
+    {
+      "parameters": {
+        "resource": "calendar",
+        "calendar": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        80,
+        -420
+      ],
+      "id": "7bb98315-6c63-4868-bf92-208c30f42635",
+      "name": "GetEvent"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        420,
+        -300
+      ],
+      "id": "fe2c8b03-5e71-46ee-aa45-0bbda44b8ca1",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "content": "Content library setup\n---\nbusiness uploads media into google drive (or our database)\n\nBusiness inputs important dates/events in google calender\n\nInclude metadata such as tags like \"new product\" \"meatballs\" \"summer special\"\n\n\nAI will grab info from here to curate posts.\n\n",
+        "height": 580,
+        "width": 820
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -280,
+        -580
+      ],
+      "typeVersion": 1,
+      "id": "028488a0-210e-45cd-bdc4-10b6f8de906a",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1520,
+        -400
+      ],
+      "id": "b97e5421-bb51-4e84-a810-98a945ab92c2",
+      "name": "HttpRequest:InstagramGraphAPI"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "messages": {
+          "values": [
+            {}
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        640,
+        -300
+      ],
+      "id": "fff185c9-c5d6-4c04-987a-e68652c65938",
+      "name": "AI generate caption/hashtag",
+      "credentials": {
+        "openAiApi": {
+          "id": "fmCcUkYD1cLsYa4j",
+          "name": "Luke's OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "171fc0e5-6b11-4ad3-b2d3-a4256a9485df",
+              "leftValue": "",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1000,
+        -300
+      ],
+      "id": "8faa6fa0-b056-4145-8679-0d9a3edce7df",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1520,
+        -160
+      ],
+      "id": "92570f85-ce22-4d43-918d-6de67d676997",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1760,
+        -320
+      ],
+      "id": "cb419962-de4b-4269-baf4-6794896813ce",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "fileId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1980,
+        -320
+      ],
+      "id": "6182ba9a-5d00-4e52-883d-e7803906444c",
+      "name": "UpdateDatabase"
+    },
+    {
+      "parameters": {
+        "content": "AI receives potential events and media from database.\n\nIF post, then go straight to posting. IF story, text overlay onto media.\n\nPost to instagram\n",
+        "height": 580,
+        "width": 1100,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        600,
+        -580
+      ],
+      "typeVersion": 1,
+      "id": "fb09aec2-be00-4870-a5de-4f103fdabd94",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -480,
+        -300
+      ],
+      "id": "3f31905d-1f87-488c-85cc-c0450e57b27e",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nfor (const item of $input.all()) {\n  item.json.myNewField = 1;\n}\n\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1260,
+        -160
+      ],
+      "id": "38678953-3feb-4877-aa47-7e0607a7c273",
+      "name": "OverlayStoryText"
+    },
+    {
+      "parameters": {
+        "path": "21a14343-4b6e-43f0-9757-b93490dad049",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -600,
+        500
+      ],
+      "id": "f5c984b9-fbe1-4552-903b-32647c0d574a",
+      "name": "Webhook1",
+      "webhookId": "21a14343-4b6e-43f0-9757-b93490dad049"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "messages": {
+          "values": [
+            {}
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        -380,
+        500
+      ],
+      "id": "0b1f47c8-eeb8-401c-8425-314cc2aa1e90",
+      "name": "Sentiment/Intent",
+      "credentials": {
+        "openAiApi": {
+          "id": "fmCcUkYD1cLsYa4j",
+          "name": "Luke's OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "messages": {
+          "values": [
+            {}
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        -20,
+        500
+      ],
+      "id": "e2aecae5-9d43-40c4-8a4b-6c44300e2564",
+      "name": "Generate response",
+      "credentials": {
+        "openAiApi": {
+          "id": "fmCcUkYD1cLsYa4j",
+          "name": "Luke's OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "a18ff68c-a42f-4bfa-a681-c63725c5576e",
+              "leftValue": "",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        360,
+        500
+      ],
+      "id": "3d84132e-8134-4ecd-b9ae-6dc0db3f5f5f",
+      "name": "Approval?"
+    },
+    {
+      "parameters": {
+        "operation": "sendAndWait",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        580,
+        400
+      ],
+      "id": "f11a1406-7e75-4fe7-bbce-69a776bc6413",
+      "name": "Gmail",
+      "webhookId": "27faec75-dff5-4349-9603-43283b7b37dc",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "tOPe7HWxbxfqDMPf",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        800,
+        600
+      ],
+      "id": "84c19ec7-a1c8-4e30-91c2-48c849b6c8e5",
+      "name": "PostComment"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        800,
+        400
+      ],
+      "id": "3bc633f2-b972-46ae-a77f-0852455ab19f",
+      "name": "PostComment1"
+    },
+    {
+      "parameters": {
+        "content": "Comment/DM Reply bot.\n1. webhook when comment or dm on instagram\n2. check sentiment and classify postive, question, complaint, spam\n3. if needs human approval send message to software or gmail and wait for approval.",
+        "height": 900,
+        "width": 1740,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -620,
+        240
+      ],
+      "typeVersion": 1,
+      "id": "29289705-77de-4cba-83af-f3803942622f",
+      "name": "Sticky Note2"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "ContentFolder": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "GetEvent": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "AI generate caption/hashtag",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI generate caption/hashtag": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "HttpRequest:InstagramGraphAPI",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "OverlayStoryText",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HttpRequest:InstagramGraphAPI": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "UpdateDatabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "ContentFolder",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "GetEvent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OverlayStoryText": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook1": {
+      "main": [
+        [
+          {
+            "node": "Sentiment/Intent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sentiment/Intent": {
+      "main": [
+        [
+          {
+            "node": "Generate response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate response": {
+      "main": [
+        [
+          {
+            "node": "Approval?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Approval?": {
+      "main": [
+        [
+          {
+            "node": "Gmail",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "PostComment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail": {
+      "main": [
+        [
+          {
+            "node": "PostComment1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "4c880e93-2518-4ec8-bad7-077b21fb1056",
+  "meta": {
+    "instanceId": "64299d8a6f3080f1255aff6aa99ae1268993b075331d7c473c99c327630a83c9"
+  },
+  "id": "1tYl1fGr0VepL2eG",
+  "tags": []
+}
