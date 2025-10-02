@@ -202,6 +202,12 @@
                     </svg>
                     Test In-House
                   </button>
+                  <button id="validate-config" class="px-4 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors flex items-center">
+                    <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    Check Config
+                  </button>
                 </div>
                 
                   <div class="bg-white rounded-lg p-4 border">
@@ -539,6 +545,10 @@
   <script src="js/ui-manager.js" defer></script>
   <script src="js/audio-recorder.js" defer></script>
   <script src="js/api-client.js" defer></script>
+  
+  <!-- Configuration System -->
+  <script src="js/restaurant-config-loader.js" defer></script>
+  <script src="js/restaurant-config-generator.js" defer></script>
   
   <!-- In-House Processing Modules (No External APIs) -->
   <script src="js/local-conversation-engine.js" defer></script>

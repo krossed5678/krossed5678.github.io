@@ -57,17 +57,25 @@ class RestaurantBookingApp {
   }
 
   async waitForInHouseProcessors() {
-    return new Promise((resolve) => {
+    return new Promise(async (resolve) => {
       console.log('⏳ Waiting for in-house processors...');
       
-      const checkProcessors = () => {
+      const checkProcessors = async () => {
         if (window.InHouseVoiceConversation && 
-            window.localConversationEngine && 
-            window.inHouseVoiceProcessor) {
+            window.LocalConversationEngine && 
+            window.inHouseVoiceProcessor &&
+            window.RestaurantConfigLoader) {
+          
+          // Initialize configuration loader
+          this.configLoader = new window.RestaurantConfigLoader();
+          
+          // Initialize local conversation engine with config
+          window.localConversationEngine = new window.LocalConversationEngine(this.configLoader);
+          await window.localConversationEngine.init();
           
           // Initialize in-house voice conversation
           this.inHouseVoiceConversation = new window.InHouseVoiceConversation();
-          console.log('✅ In-house processors loaded and ready');
+          console.log('✅ In-house processors loaded with custom configuration');
           resolve();
           return true;
         }
@@ -168,6 +176,43 @@ class RestaurantBookingApp {
         }
       });
       console.log('✅ Test in-house button handler attached');
+    }
+
+    // Validate Configuration button
+    const validateConfigButton = document.getElementById('validate-config');
+    if (validateConfigButton) {
+      validateConfigButton.addEventListener('click', async () => {
+        console.log('🔍 Validating configuration...');
+        try {
+          if (this.configLoader && this.configLoader.isConfigLoaded()) {
+            const config = this.configLoader.getConfig();
+            const validation = new RestaurantConfigLoader().validateConfig(config);
+            
+            if (validation.valid) {
+              UIManager.showNotification('✅ Configuration is valid!', 'success');
+              console.log('✅ Configuration validation passed');
+            } else {
+              UIManager.showNotification('⚠️ Configuration has issues - check console', 'warning');
+              console.log('⚠️ Configuration issues:', validation.errors);
+            }
+            
+            // Show configuration summary
+            const restaurant = config.restaurant.basic_info;
+            console.log('🏪 Restaurant Info:');
+            console.log(`- Name: ${restaurant.name}`);
+            console.log(`- Cuisine: ${restaurant.cuisine}`);
+            console.log(`- Price Range: ${restaurant.price_range}`);
+            console.log(`- Established: ${restaurant.established}`);
+            
+          } else {
+            UIManager.showNotification('❌ No configuration loaded', 'error');
+          }
+        } catch (error) {
+          console.error('❌ Configuration validation failed:', error);
+          UIManager.showNotification('Validation failed: ' + error.message, 'error');
+        }
+      });
+      console.log('✅ Validate config button handler attached');
     }
 
     // Handle page visibility changes to manage resources

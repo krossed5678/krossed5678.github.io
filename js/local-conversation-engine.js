@@ -2,16 +2,47 @@
 // Handles restaurant-specific conversations without external APIs
 
 class LocalConversationEngine {
-  constructor() {
-    this.knowledgeBase = this.initializeKnowledgeBase();
+  constructor(configLoader = null) {
+    this.configLoader = configLoader;
+    this.knowledgeBase = null;
     this.conversationPatterns = this.initializeConversationPatterns();
     this.conversationState = {};
+    this.brandVoice = null;
+    this.businessRules = null;
     this.init();
   }
 
-  init() {
+  async init() {
     console.log('🧠 Initializing Local Conversation Engine...');
+    
+    // Load configuration if config loader provided
+    if (this.configLoader) {
+      try {
+        await this.loadConfiguration();
+      } catch (error) {
+        console.warn('⚠️ Config loading failed, using default knowledge base:', error);
+        this.knowledgeBase = this.initializeKnowledgeBase();
+      }
+    } else {
+      this.knowledgeBase = this.initializeKnowledgeBase();
+    }
+    
     console.log('✅ Local Conversation Engine ready');
+  }
+
+  async loadConfiguration() {
+    console.log('📁 Loading restaurant configuration...');
+    
+    if (!this.configLoader.isConfigLoaded()) {
+      await this.configLoader.loadConfig();
+    }
+    
+    const transformedConfig = this.configLoader.transformForConversationEngine();
+    this.knowledgeBase = transformedConfig;
+    this.brandVoice = transformedConfig.brandVoice;
+    this.businessRules = transformedConfig.businessRules;
+    
+    console.log(`✅ Configuration loaded for: ${transformedConfig.restaurant.name}`);
   }
 
   // ---------- Knowledge Base ----------
@@ -20,6 +51,8 @@ class LocalConversationEngine {
     return {
       restaurant: {
         name: "Mario's Italian Bistro",
+        description: "Authentic Italian cuisine in an elegant, family-friendly atmosphere",
+        established: "1985",
         hours: {
           monday: "11:00 AM - 10:00 PM",
           tuesday: "11:00 AM - 10:00 PM", 
@@ -30,21 +63,70 @@ class LocalConversationEngine {
           sunday: "10:00 AM - 10:00 PM"
         },
         cuisine: "Italian",
+        priceRange: "$$-$$$",
         capacity: 80,
         avgDiningTime: 90, // minutes
+        reservationWindow: 60, // days in advance
+        walkInsWelcome: true,
         
         menu: {
-          appetizers: ["Bruschetta", "Calamari", "Antipasto Platter", "Caesar Salad"],
-          mains: ["Spaghetti Carbonara", "Chicken Parmigiana", "Seafood Risotto", "Margherita Pizza", "Lasagna", "Veal Piccata"],
-          desserts: ["Tiramisu", "Gelato", "Cannoli", "Panna Cotta"],
-          beverages: ["Italian Wine", "Espresso", "Limoncello", "San Pellegrino"]
+          appetizers: [
+            {name: "Bruschetta Trio", price: "$12", description: "Toasted bread with tomato basil, ricotta honey, and olive tapenade", dietary: ["vegetarian"]},
+            {name: "Calamari Fritti", price: "$14", description: "Crispy squid with marinara and lemon aioli"},
+            {name: "Antipasto Della Casa", price: "$18", description: "Cured meats, artisanal cheeses, olives, and roasted peppers", dietary: ["gluten-free available"]},
+            {name: "Arancini", price: "$11", description: "Risotto balls stuffed with mozzarella, served with marinara", dietary: ["vegetarian"]}
+          ],
+          mains: [
+            {name: "Spaghetti Carbonara", price: "$19", description: "Traditional Roman pasta with pancetta, egg, and pecorino"},
+            {name: "Chicken Parmigiana", price: "$24", description: "Breaded chicken breast with marinara and mozzarella over pasta"},
+            {name: "Seafood Risotto", price: "$28", description: "Creamy arborio rice with shrimp, scallops, and mussels", dietary: ["gluten-free"]},
+            {name: "Margherita Pizza", price: "$16", description: "San Marzano tomatoes, fresh mozzarella, basil", dietary: ["vegetarian", "vegan available"]},
+            {name: "Osso Buco", price: "$32", description: "Braised veal shanks with saffron risotto", dietary: ["gluten-free"]},
+            {name: "Eggplant Parmigiana", price: "$21", description: "Layered eggplant with marinara and mozzarella", dietary: ["vegetarian", "vegan available"]}
+          ],
+          desserts: [
+            {name: "Tiramisu", price: "$8", description: "Classic mascarpone dessert with espresso and cocoa", dietary: ["vegetarian"]},
+            {name: "Gelato Trio", price: "$7", description: "Vanilla, chocolate, and pistachio", dietary: ["vegetarian", "dairy-free available"]},
+            {name: "Cannoli Siciliani", price: "$9", description: "Crispy shells filled with sweet ricotta and chocolate chips", dietary: ["vegetarian"]},
+            {name: "Panna Cotta", price: "$8", description: "Vanilla custard with seasonal berry compote", dietary: ["vegetarian", "gluten-free"]}
+          ],
+          beverages: [
+            {category: "Wine", items: ["Chianti Classico", "Pinot Grigio", "Barolo", "Prosecco"]},
+            {category: "Beer", items: ["Peroni", "Moretti", "Local IPA", "Wheat Beer"]},
+            {category: "Coffee", items: ["Espresso", "Cappuccino", "Americano", "Affogato"]},
+            {category: "Non-Alcoholic", items: ["San Pellegrino", "Italian Sodas", "Fresh Juices", "Herbal Teas"]}
+          ],
+          specials: {
+            daily: "Ask about our daily pasta special made with seasonal ingredients",
+            happyHour: "Monday-Friday 3-6 PM: Half-price appetizers and $5 house wine",
+            weekend: "Weekend brunch 10 AM-3 PM with bottomless mimosas"
+          }
         },
         
         policies: {
-          reservationPolicy: "Reservations recommended for parties of 4 or more",
-          cancellationPolicy: "24-hour cancellation notice preferred",
-          largeParties: "Parties of 8+ may have gratuity added",
-          dressCode: "Smart casual"
+          reservationPolicy: "Reservations recommended for parties of 4 or more. Walk-ins welcome based on availability.",
+          cancellationPolicy: "24-hour cancellation notice preferred. Same-day cancellations may incur a fee.",
+          largeParties: "Parties of 8+ require a deposit and may have gratuity added. Private dining available for 12+.",
+          dressCode: "Smart casual. No shorts, flip-flops, or athletic wear for dinner service.",
+          children: "Children welcome. High chairs and kids menu available. Crayons and activities provided.",
+          pets: "Service animals welcome. Outdoor seating allows well-behaved leashed pets.",
+          accessibility: "Fully wheelchair accessible. Braille menus and large print menus available.",
+          payment: "We accept all major credit cards, cash, and digital payments. Split bills welcome.",
+          corkage: "$25 corkage fee for wine. Maximum 2 bottles per table.",
+          privateEvents: "Private dining room seats 20. Full restaurant buyouts available for 80+."
+        },
+        
+        features: {
+          wifi: "Complimentary high-speed WiFi throughout restaurant",
+          parking: "Valet parking available evenings. Street parking and nearby garage.",
+          atmosphere: "Romantic lighting, live jazz on weekends, family-friendly until 8 PM",
+          specialServices: ["Wine pairing dinners", "Cooking classes", "Private chef events", "Catering services"]
+        },
+        
+        staff: {
+          chefInfo: "Executive Chef Marco trained in Milan and Rome",
+          sommelier: "Wine expert available Thursday-Sunday evenings",
+          languages: ["English", "Italian", "Spanish"]
         },
         
         contact: {
@@ -75,10 +157,13 @@ class LocalConversationEngine {
       intents: {
         // Booking-related
         makeReservation: [
-          /(?:make|book|reserve|need|want|get)\s+(?:a\s+)?(?:reservation|table|booking)/i,
+          /(?:make|book|reserve|need|want|get|schedule|set\s+up)\s+(?:a\s+)?(?:reservation|table|booking|appointment)/i,
           /(?:table|reservation)\s+for/i,
           /book\s+(?:a\s+)?table/i,
-          /can\s+(?:we|i)\s+(?:get|have)\s+a\s+table/i
+          /can\s+(?:we|i)\s+(?:get|have|reserve|book)\s+(?:a\s+)?table/i,
+          /(?:i|we)\s+(?:would\s+like|want|need)\s+(?:to\s+)?(?:book|reserve|make)/i,
+          /looking\s+(?:for|to\s+book)\s+(?:a\s+)?(?:table|reservation)/i,
+          /(?:could|can)\s+(?:i|we)\s+(?:please\s+)?(?:book|reserve|get)/i
         ],
         
         checkAvailability: [
@@ -113,10 +198,41 @@ class LocalConversationEngine {
         ],
         
         askPolicies: [
-          /(?:dress\s+code|what\s+should\s+i\s+wear)/i,
-          /(?:parking|can\s+i\s+park)/i,
-          /(?:kids|children|family)/i,
-          /(?:cancellation|cancel)/i
+          /(?:dress\s+code|what\s+should\s+i\s+wear|attire)/i,
+          /(?:parking|can\s+i\s+park|where\s+to\s+park)/i,
+          /(?:kids|children|family|child\s+friendly|high\s+chairs)/i,
+          /(?:cancellation|cancel|reschedule|change|modify)/i,
+          /(?:pets|dogs|animals)/i,
+          /(?:wheelchair|accessible|disability)/i,
+          /(?:large\s+groups|parties|events)/i,
+          /(?:private\s+dining|room|space)/i
+        ],
+
+        askSpecials: [
+          /(?:specials|deals|promotions|offers)/i,
+          /(?:happy\s+hour|wine\s+specials)/i,
+          /(?:today'?s\s+special|chef'?s\s+special)/i,
+          /(?:seasonal|limited\s+time)/i
+        ],
+
+        askDietary: [
+          /(?:vegetarian|vegan|plant\s+based)/i,
+          /(?:gluten\s+free|gluten[-\s]free|celiac)/i,
+          /(?:allergies|allergy|allergic)/i,
+          /(?:dairy\s+free|lactose)/i,
+          /(?:keto|low\s+carb|atkins)/i,
+          /(?:halal|kosher)/i
+        ],
+
+        compliment: [
+          /(?:great|excellent|amazing|wonderful|fantastic|love|perfect)/i,
+          /(?:best|incredible|outstanding|impressive)/i
+        ],
+
+        complaint: [
+          /(?:terrible|awful|bad|horrible|disappointing|upset|angry)/i,
+          /(?:problem|issue|wrong|mistake|error)/i,
+          /(?:cold\s+food|slow\s+service|rude)/i
         ],
         
         // Conversational
@@ -165,10 +281,22 @@ class LocalConversationEngine {
         ],
         
         preferences: {
-          dietary: /(?:vegetarian|vegan|gluten[-\s]?free|dairy[-\s]?free|allergic\s+to|no\s+(?:meat|dairy|gluten))/i,
-          seating: /(?:booth|table|bar|patio|outdoor|window|quiet|private)/i,
-          occasion: /(?:birthday|anniversary|date|business|celebration|romantic)/i
-        }
+          dietary: /(?:vegetarian|vegan|plant[-\s]?based|gluten[-\s]?free|dairy[-\s]?free|lactose[-\s]?free|allergic\s+to|no\s+(?:meat|dairy|gluten|nuts|shellfish)|keto|low[-\s]?carb|halal|kosher)/i,
+          seating: /(?:booth|table|bar|patio|outdoor|indoor|window|quiet|private|corner|round\s+table|high\s+top|banquette)/i,
+          occasion: /(?:birthday|anniversary|date|business|celebration|romantic|proposal|graduation|retirement|baby\s+shower|wedding|engagement)/i,
+          accessibility: /(?:wheelchair|accessible|mobility|walker|cane|hearing|visual)/i,
+          ambiance: /(?:quiet|loud|lively|romantic|casual|formal|intimate|family\s+friendly)/i
+        },
+
+        urgency: [
+          /(?:urgent|asap|as\s+soon\s+as\s+possible|emergency|right\s+now)/i,
+          /(?:last\s+minute|short\s+notice)/i
+        ],
+
+        groupSize: [
+          /(?:large\s+group|big\s+party|(?:over|more\s+than)\s+\d+)/i,
+          /(?:small|intimate|just\s+(?:two|2)|couple)/i
+        ]
       }
     };
   }
@@ -308,6 +436,30 @@ class LocalConversationEngine {
     if (patterns.occasion.test(message)) {
       entities.occasion = message.match(patterns.occasion)[0];
     }
+    
+    if (patterns.accessibility.test(message)) {
+      entities.accessibilityNeeds = message.match(patterns.accessibility)[0];
+    }
+    
+    if (patterns.ambiance.test(message)) {
+      entities.ambiancePreference = message.match(patterns.ambiance)[0];
+    }
+    
+    // Extract urgency
+    for (const pattern of this.conversationPatterns.entities.urgency) {
+      if (pattern.test(message)) {
+        entities.urgency = 'high';
+        break;
+      }
+    }
+    
+    // Extract group size indicators
+    for (const pattern of this.conversationPatterns.entities.groupSize) {
+      if (pattern.test(message)) {
+        entities.groupType = message.match(pattern)[0];
+        break;
+      }
+    }
   }
 
   // ---------- Conversation State Management ----------
@@ -373,6 +525,18 @@ class LocalConversationEngine {
       case 'thanks':
         return this.handleThanks();
         
+      case 'askSpecials':
+        return this.handleSpecialsInquiry();
+        
+      case 'askDietary':
+        return this.handleDietaryInquiry(message);
+        
+      case 'compliment':
+        return this.handleCompliment();
+        
+      case 'complaint':
+        return this.handleComplaint();
+        
       case 'goodbye':
         return this.handleGoodbye();
         
@@ -382,6 +546,16 @@ class LocalConversationEngine {
   }
 
   handleGreeting() {
+    // Use custom greeting responses if available
+    if (this.configLoader && this.configLoader.getConfig()) {
+      const customGreetings = this.configLoader.getConfig().conversation_settings?.default_responses?.greeting;
+      if (customGreetings && customGreetings.length > 0) {
+        const template = customGreetings[Math.floor(Math.random() * customGreetings.length)];
+        return this.configLoader.customizeResponse(template);
+      }
+    }
+    
+    // Fallback to default greetings
     const greetings = [
       `Hello! Welcome to ${this.knowledgeBase.restaurant.name}. How can I help you today?`,
       `Hi there! I'm here to help with reservations and answer any questions about our restaurant.`,
@@ -428,7 +602,15 @@ class LocalConversationEngine {
   }
 
   confirmReservation(booking) {
-    // Create the booking
+    // Create comprehensive booking with all extracted information
+    const notes = [];
+    if (booking.occasion) notes.push(`Occasion: ${booking.occasion}`);
+    if (booking.dietaryRestrictions) notes.push(`Dietary: ${booking.dietaryRestrictions}`);
+    if (booking.seatingPreference) notes.push(`Seating: ${booking.seatingPreference}`);
+    if (booking.accessibilityNeeds) notes.push(`Accessibility: ${booking.accessibilityNeeds}`);
+    if (booking.ambiancePreference) notes.push(`Ambiance: ${booking.ambiancePreference}`);
+    if (booking.urgency === 'high') notes.push('URGENT REQUEST');
+    
     const finalBooking = {
       id: booking.id,
       customer_name: booking.customerName,
@@ -438,9 +620,16 @@ class LocalConversationEngine {
       start_time: this.parseTime(booking.time, booking.date),
       end_time: this.addHours(this.parseTime(booking.time, booking.date), 2),
       status: 'confirmed',
-      notes: booking.occasion ? `Occasion: ${booking.occasion}` : 'Created via chat',
+      notes: notes.length > 0 ? notes.join('; ') : 'Created via in-house chat system',
       created_at: new Date().toISOString(),
-      created_via: 'chat_inhouse'
+      created_via: 'chat_inhouse',
+      preferences: {
+        dietary: booking.dietaryRestrictions || null,
+        seating: booking.seatingPreference || null,
+        occasion: booking.occasion || null,
+        accessibility: booking.accessibilityNeeds || null,
+        urgency: booking.urgency || 'normal'
+      }
     };
     
     // Add to system
@@ -450,8 +639,28 @@ class LocalConversationEngine {
     delete this.conversationState.activeBooking;
     
     const dateStr = this.formatDate(finalBooking.date);
+    let confirmationMsg = `Perfect! Your reservation is confirmed for ${booking.customerName}, party of ${booking.partySize}, on ${dateStr} at ${booking.time}.`;
     
-    return `Perfect! Your reservation is confirmed for ${booking.customerName}, party of ${booking.partySize}, on ${dateStr} at ${booking.time}. We'll contact you at ${booking.phoneNumber} if needed. Looking forward to seeing you at ${this.knowledgeBase.restaurant.name}!`;
+    // Add personalized touches based on extracted information
+    if (booking.occasion) {
+      confirmationMsg += ` We're excited to help you celebrate your ${booking.occasion}!`;
+    }
+    
+    if (booking.dietaryRestrictions) {
+      confirmationMsg += ` We've noted your ${booking.dietaryRestrictions} preference and will ensure our chef prepares special options.`;
+    }
+    
+    if (booking.seatingPreference) {
+      confirmationMsg += ` We'll do our best to accommodate your ${booking.seatingPreference} seating preference.`;
+    }
+    
+    if (booking.accessibilityNeeds) {
+      confirmationMsg += ` We've noted your accessibility needs and will have everything ready.`;
+    }
+    
+    confirmationMsg += ` We'll contact you at ${booking.phoneNumber} if needed. Looking forward to welcoming you to ${this.knowledgeBase.restaurant.name}!`;
+    
+    return confirmationMsg;
   }
 
   handleAvailabilityCheck(entities) {
@@ -475,30 +684,38 @@ class LocalConversationEngine {
     const menu = this.knowledgeBase.restaurant.menu;
     
     if (/appetizer|starter/i.test(message)) {
-      return `Our popular appetizers include: ${menu.appetizers.join(', ')}. Would you like to make a reservation to try them?`;
+      if (Array.isArray(menu.appetizers) && menu.appetizers.length > 0) {
+        const apps = menu.appetizers.map(item => {
+          if (typeof item === 'object') {
+            return `${item.name} (${item.price})${item.popular ? ' - Popular!' : ''}`;
+          }
+          return item;
+        }).join(', ');
+        return `Our appetizers include: ${apps}. All made fresh to order! Would you like to make a reservation?`;
+      } else {
+        return "We have a variety of delicious appetizers. Would you like to make a reservation to try them?";
+      }
     }
     
     if (/main|entree|dinner/i.test(message)) {
-      return `Our signature dishes include: ${menu.mains.slice(0, 4).join(', ')}, and more! We serve authentic Italian cuisine. Shall I make you a reservation?`;
+      const mains = menu.mains.slice(0, 3).map(item => `${item.name} (${item.price}) - ${item.description}`).join('; ');
+      return `Our signature dishes include: ${mains}. We serve authentic Italian cuisine made with imported ingredients. Shall I make you a reservation?`;
     }
     
     if (/dessert/i.test(message)) {
-      return `Our delicious desserts include: ${menu.desserts.join(', ')}. Perfect way to end your meal!`;
+      const desserts = menu.desserts.map(item => `${item.name} (${item.price})`).join(', ');
+      return `Our house-made desserts include: ${desserts}. Our Tiramisu is made with the traditional family recipe! Perfect way to end your meal.`;
     }
     
     if (/drink|wine|beverage/i.test(message)) {
-      return `We offer ${menu.beverages.join(', ')}, and an extensive Italian wine list. Would you like to book a table?`;
+      return `We have an extensive Italian wine list featuring Chianti, Barolo, and Prosecco. Our sommelier is available Thursday-Sunday evenings for wine pairings. We also offer craft cocktails, Italian beers, and artisanal coffee. Would you like to book a table?`;
     }
     
-    if (/vegetarian|vegan/i.test(message)) {
-      return "We have several vegetarian options including our Margherita Pizza and fresh salads. We can also accommodate vegan requests with advance notice.";
+    if (/price|cost|expensive|cheap/i.test(message)) {
+      return `We're in the ${this.knowledgeBase.restaurant.priceRange} range. Appetizers $11-18, mains $16-32, desserts $7-9. Great value for authentic Italian cuisine! Check out our happy hour specials Monday-Friday 3-6 PM.`;
     }
     
-    if (/gluten/i.test(message)) {
-      return "Yes! We offer gluten-free pasta and pizza options. Just let us know when you make your reservation so we can prepare accordingly.";
-    }
-    
-    return `We serve authentic ${this.knowledgeBase.restaurant.cuisine} cuisine with fresh, locally-sourced ingredients. Our specialties include ${menu.mains.slice(0, 3).join(', ')}. Would you like to make a reservation?`;
+    return `We serve authentic ${this.knowledgeBase.restaurant.cuisine} cuisine with fresh, locally-sourced ingredients. Our Executive Chef Marco trained in Milan and Rome. ${menu.specials.daily} Would you like to make a reservation?`;
   }
 
   handleLocationInquiry() {
@@ -508,28 +725,45 @@ class LocalConversationEngine {
 
   handlePolicyInquiry(message) {
     const policies = this.knowledgeBase.restaurant.policies;
+    const features = this.knowledgeBase.restaurant.features;
     
     if (/dress|wear|attire/i.test(message)) {
       return `Our dress code is ${policies.dressCode}. We want you to feel comfortable while maintaining a nice atmosphere for all guests.`;
     }
     
     if (/parking/i.test(message)) {
-      return "We offer valet parking for your convenience, and there's also street parking available nearby.";
+      return `${features.parking} There's also a public garage two blocks away. Valet is complimentary with dinner reservations!`;
     }
     
     if (/kid|child|family/i.test(message)) {
-      return "Absolutely! We're family-friendly and have a children's menu. High chairs and booster seats are available.";
+      return `${policies.children} We're ${features.atmosphere.split(',')[2]}. Kids love our house-made pasta and pizza!`;
     }
     
-    if (/cancel/i.test(message)) {
-      return `${policies.cancellationPolicy}. You can call us or let me know here if you need to make changes.`;
+    if (/cancel|reschedule|change/i.test(message)) {
+      return `${policies.cancellationPolicy} You can call us, use our online system, or let me know here if you need to make changes. We understand plans change!`;
     }
     
-    if (/large|group|party/i.test(message)) {
-      return `${policies.largeParties}. We're happy to accommodate larger groups with advance notice!`;
+    if (/large|group|party|event/i.test(message)) {
+      return `${policies.largeParties} Our private dining room is perfect for celebrations, business dinners, or special occasions. We can customize menus for your event!`;
     }
     
-    return "I'd be happy to help with any specific questions about our policies. What would you like to know?";
+    if (/pet|dog|animal/i.test(message)) {
+      return `${policies.pets} Our patio is perfect for well-behaved four-legged family members! We even have a special doggy menu.`;
+    }
+    
+    if (/wheelchair|accessible|disability/i.test(message)) {
+      return `${policies.accessibility} We're committed to ensuring all guests can enjoy our restaurant comfortably.`;
+    }
+    
+    if (/payment|pay|card|cash/i.test(message)) {
+      return `${policies.payment} We also offer contactless payment options for your convenience.`;
+    }
+    
+    if (/wine|bring|bottle|corkage/i.test(message)) {
+      return `${policies.corkage} We're happy to open your special bottles! Our sommelier can also recommend perfect pairings from our extensive Italian wine list.`;
+    }
+    
+    return "I'd be happy to help with any specific questions about our policies. We strive to accommodate all our guests' needs. What would you like to know about dining with us?";
   }
 
   handleThanks() {
@@ -552,16 +786,89 @@ class LocalConversationEngine {
     return responses[Math.floor(Math.random() * responses.length)];
   }
 
+  handleSpecialsInquiry() {
+    const specials = this.knowledgeBase.restaurant.menu.specials;
+    return `Our current specials include: ${specials.daily}. ${specials.happyHour} ${specials.weekend} Would you like to make a reservation to try them?`;
+  }
+
+  handleDietaryInquiry(message) {
+    const menu = this.knowledgeBase.restaurant.menu;
+    
+    if (/vegetarian/i.test(message)) {
+      const vegItems = menu.mains.filter(item => item.dietary && item.dietary.includes('vegetarian')).map(item => item.name);
+      return `We have several vegetarian options including ${vegItems.join(', ')}, plus vegetarian appetizers and desserts. All clearly marked on our menu!`;
+    }
+    
+    if (/vegan/i.test(message)) {
+      return "We can make our Margherita Pizza and Eggplant Parmigiana vegan upon request. We also have dairy-free gelato and several naturally vegan dishes. Please let us know when making your reservation so our chef can prepare special options.";
+    }
+    
+    if (/gluten/i.test(message)) {
+      const gfItems = menu.mains.filter(item => item.dietary && item.dietary.includes('gluten-free')).map(item => item.name);
+      return `Yes! We offer gluten-free options including ${gfItems.join(', ')}, plus gluten-free pasta and pizza. Our kitchen follows strict protocols to prevent cross-contamination.`;
+    }
+    
+    if (/allerg/i.test(message)) {
+      return "We take allergies very seriously. Please inform us of any allergies when making your reservation. Our chef can modify most dishes to accommodate common allergies including nuts, shellfish, dairy, and eggs.";
+    }
+    
+    return "We accommodate various dietary needs including vegetarian, vegan, gluten-free, and allergy restrictions. Please let us know your requirements when booking so we can ensure a perfect dining experience.";
+  }
+
+  handleCompliment() {
+    const responses = [
+      "Thank you so much! We're thrilled you think so. Our team works hard to provide an exceptional dining experience. Would you like to make another reservation?",
+      "That means the world to us! We'd love to have you dine with us again. Can I help you book your next visit?",
+      "We're so happy to hear that! Your feedback motivates our entire team. What can I help you with today?"
+    ];
+    
+    return responses[Math.floor(Math.random() * responses.length)];
+  }
+
+  handleComplaint() {
+    const responses = [
+      "I sincerely apologize that we didn't meet your expectations. Your feedback is very important to us. Could you please provide more details so we can address this properly? We'd also like to invite you back for a complimentary meal to make things right.",
+      "I'm truly sorry to hear about your experience. This isn't the standard we strive for. Please let me know more details, and I'll ensure our manager follows up with you personally. We want to make this right.",
+      "Thank you for bringing this to our attention. We take all feedback seriously and use it to improve. Could you share more details? We'd love the opportunity to provide you with the exceptional service you deserve on a future visit."
+    ];
+    
+    return responses[Math.floor(Math.random() * responses.length)];
+  }
+
   handleGeneral(message) {
-    // Check against common questions
+    // Enhanced pattern matching for common questions
+    const restaurant = this.knowledgeBase.restaurant;
+    
+    // WiFi questions
+    if (/wifi|internet|password/i.test(message)) {
+      return `${restaurant.features.wifi}. The password is "MariosBistro2024" - feel free to stay connected during your meal!`;
+    }
+    
+    // Atmosphere/ambiance questions
+    if (/atmosphere|ambiance|vibe|romantic|loud|quiet/i.test(message)) {
+      return `${restaurant.features.atmosphere}. We're perfect for both romantic dinners and family celebrations. Would you like to book a table?`;
+    }
+    
+    // Chef/cooking questions
+    if (/chef|cook|kitchen|authentic/i.test(message)) {
+      return `${restaurant.staff.chefInfo}. We use traditional cooking methods and import many of our ingredients directly from Italy. Established in ${restaurant.established}, we're committed to authentic Italian cuisine.`;
+    }
+    
+    // Special services
+    if (/catering|private|event|party|class/i.test(message)) {
+      const services = restaurant.features.specialServices.join(', ');
+      return `We offer ${services}. ${restaurant.policies.privateEvents} Please call us to discuss your special event needs!`;
+    }
+    
+    // Check against common questions database
     for (const [question, answer] of Object.entries(this.knowledgeBase.commonQuestions)) {
       if (message.includes(question)) {
         return answer;
       }
     }
     
-    // Default response
-    return "I'd be happy to help! I can assist with reservations, provide information about our menu, hours, or location. What would you like to know?";
+    // Enhanced default response with more context
+    return `I'd be happy to help! I can assist with reservations, menu information, dietary accommodations, special events, or answer questions about our restaurant. We've been serving authentic Italian cuisine since ${restaurant.established}. What would you like to know?`;
   }
 
   // ---------- Booking Management ----------

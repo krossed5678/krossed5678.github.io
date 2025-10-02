@@ -1,0 +1,336 @@
+{
+  "restaurant": {
+    "basic_info": {
+      "name": "Mario's Italian Bistro",
+      "description": "Authentic Italian cuisine in an elegant, family-friendly atmosphere",
+      "established": "1985",
+      "cuisine": "Italian",
+      "price_range": "$$-$$$",
+      "capacity": 80,
+      "avg_dining_time_minutes": 90,
+      "reservation_window_days": 60,
+      "walk_ins_welcome": true
+    },
+    
+    "hours": {
+      "monday": "11:00 AM - 10:00 PM",
+      "tuesday": "11:00 AM - 10:00 PM",
+      "wednesday": "11:00 AM - 10:00 PM", 
+      "thursday": "11:00 AM - 10:00 PM",
+      "friday": "11:00 AM - 11:00 PM",
+      "saturday": "10:00 AM - 11:00 PM",
+      "sunday": "10:00 AM - 10:00 PM",
+      "special_hours": {
+        "holiday_hours": "Please call for holiday hours",
+        "brunch": "Weekend brunch: Saturday-Sunday 10:00 AM - 3:00 PM"
+      }
+    },
+    
+    "contact": {
+      "phone": "(555) 123-4567",
+      "email": "info@mariositalian.com",
+      "website": "www.mariositalian.com",
+      "address": {
+        "street": "123 Main Street",
+        "city": "Downtown",
+        "state": "NY",
+        "zip": "10001",
+        "neighborhood": "Little Italy"
+      },
+      "social_media": {
+        "instagram": "@marios_bistro",
+        "facebook": "Mario's Italian Bistro",
+        "twitter": "@mariosbistro"
+      }
+    },
+    
+    "menu": {
+      "appetizers": [
+        {
+          "name": "Bruschetta Trio",
+          "price": "$12",
+          "description": "Toasted bread with tomato basil, ricotta honey, and olive tapenade",
+          "dietary_tags": ["vegetarian"],
+          "popular": true,
+          "chef_recommendation": false
+        },
+        {
+          "name": "Calamari Fritti", 
+          "price": "$14",
+          "description": "Crispy squid with marinara and lemon aioli",
+          "dietary_tags": [],
+          "popular": true,
+          "chef_recommendation": false
+        },
+        {
+          "name": "Antipasto Della Casa",
+          "price": "$18", 
+          "description": "Cured meats, artisanal cheeses, olives, and roasted peppers",
+          "dietary_tags": ["gluten-free available"],
+          "popular": false,
+          "chef_recommendation": true
+        },
+        {
+          "name": "Arancini",
+          "price": "$11",
+          "description": "Risotto balls stuffed with mozzarella, served with marinara", 
+          "dietary_tags": ["vegetarian"],
+          "popular": false,
+          "chef_recommendation": false
+        }
+      ],
+      
+      "mains": [
+        {
+          "name": "Spaghetti Carbonara",
+          "price": "$19",
+          "description": "Traditional Roman pasta with pancetta, egg, and pecorino",
+          "dietary_tags": [],
+          "popular": true,
+          "chef_recommendation": true
+        },
+        {
+          "name": "Chicken Parmigiana", 
+          "price": "$24",
+          "description": "Breaded chicken breast with marinara and mozzarella over pasta",
+          "dietary_tags": [],
+          "popular": true,
+          "chef_recommendation": false
+        },
+        {
+          "name": "Seafood Risotto",
+          "price": "$28",
+          "description": "Creamy arborio rice with shrimp, scallops, and mussels",
+          "dietary_tags": ["gluten-free"],
+          "popular": false,
+          "chef_recommendation": true
+        },
+        {
+          "name": "Margherita Pizza",
+          "price": "$16", 
+          "description": "San Marzano tomatoes, fresh mozzarella, basil",
+          "dietary_tags": ["vegetarian", "vegan available"],
+          "popular": true,
+          "chef_recommendation": false
+        },
+        {
+          "name": "Osso Buco",
+          "price": "$32",
+          "description": "Braised veal shanks with saffron risotto",
+          "dietary_tags": ["gluten-free"],
+          "popular": false,
+          "chef_recommendation": true
+        },
+        {
+          "name": "Eggplant Parmigiana",
+          "price": "$21",
+          "description": "Layered eggplant with marinara and mozzarella",
+          "dietary_tags": ["vegetarian", "vegan available"],
+          "popular": false,
+          "chef_recommendation": false
+        }
+      ],
+      
+      "desserts": [
+        {
+          "name": "Tiramisu",
+          "price": "$8",
+          "description": "Classic mascarpone dessert with espresso and cocoa",
+          "dietary_tags": ["vegetarian"],
+          "popular": true,
+          "chef_recommendation": true
+        },
+        {
+          "name": "Gelato Trio",
+          "price": "$7", 
+          "description": "Vanilla, chocolate, and pistachio",
+          "dietary_tags": ["vegetarian", "dairy-free available"],
+          "popular": true,
+          "chef_recommendation": false
+        },
+        {
+          "name": "Cannoli Siciliani",
+          "price": "$9",
+          "description": "Crispy shells filled with sweet ricotta and chocolate chips",
+          "dietary_tags": ["vegetarian"],
+          "popular": false,
+          "chef_recommendation": false
+        },
+        {
+          "name": "Panna Cotta", 
+          "price": "$8",
+          "description": "Vanilla custard with seasonal berry compote",
+          "dietary_tags": ["vegetarian", "gluten-free"],
+          "popular": false,
+          "chef_recommendation": false
+        }
+      ],
+      
+      "beverages": {
+        "wine": {
+          "red": ["Chianti Classico", "Barolo", "Sangiovese", "Montepulciano"],
+          "white": ["Pinot Grigio", "Soave", "Vermentino", "Gavi"],
+          "sparkling": ["Prosecco", "Franciacorta", "Lambrusco"]
+        },
+        "beer": {
+          "italian": ["Peroni", "Moretti"],
+          "local": ["Local IPA", "Wheat Beer", "Seasonal Lager"]
+        },
+        "coffee": ["Espresso", "Cappuccino", "Americano", "Affogato", "Macchiato"],
+        "non_alcoholic": ["San Pellegrino", "Italian Sodas", "Fresh Juices", "Herbal Teas"]
+      },
+      
+      "specials": {
+        "daily_special": {
+          "description": "Ask about our daily pasta special made with seasonal ingredients",
+          "price_range": "$18-22"
+        },
+        "happy_hour": {
+          "days": "Monday-Friday",
+          "time": "3:00 PM - 6:00 PM",
+          "offer": "Half-price appetizers and $5 house wine"
+        },
+        "weekend_brunch": {
+          "days": "Saturday-Sunday",
+          "time": "10:00 AM - 3:00 PM", 
+          "offer": "Bottomless mimosas available"
+        }
+      }
+    },
+    
+    "policies": {
+      "reservations": {
+        "policy": "Reservations recommended for parties of 4 or more. Walk-ins welcome based on availability.",
+        "advance_booking": "Up to 60 days in advance",
+        "large_parties": "Parties of 8+ require a deposit and may have gratuity added. Private dining available for 12+."
+      },
+      "cancellation": {
+        "policy": "24-hour cancellation notice preferred. Same-day cancellations may incur a fee.",
+        "no_show_policy": "No-show reservations may be charged a $25 fee per person"
+      },
+      "dress_code": {
+        "policy": "Smart casual",
+        "restrictions": "No shorts, flip-flops, or athletic wear for dinner service",
+        "recommendations": "Collared shirts and closed-toe shoes recommended for evening dining"
+      },
+      "children": {
+        "policy": "Children welcome. High chairs and kids menu available.",
+        "amenities": "Crayons and activities provided",
+        "family_hours": "Family-friendly atmosphere until 8:00 PM"
+      },
+      "pets": {
+        "policy": "Service animals welcome. Outdoor seating allows well-behaved leashed pets.",
+        "restrictions": "Indoor dining restricted to service animals only"
+      },
+      "accessibility": {
+        "policy": "Fully wheelchair accessible. Braille menus and large print menus available.",
+        "features": "Accessible restrooms, ramp entrance, accessible parking spaces"
+      },
+      "payment": {
+        "accepted": "All major credit cards, cash, and digital payments. Split bills welcome.",
+        "gratuity": "Gratuity automatically added to parties of 8 or more"
+      },
+      "alcohol": {
+        "corkage": "$25 corkage fee for wine. Maximum 2 bottles per table.",
+        "policy": "Valid ID required. We reserve the right to refuse service"
+      }
+    },
+    
+    "features": {
+      "wifi": {
+        "available": true,
+        "description": "Complimentary high-speed WiFi throughout restaurant",
+        "password": "MariosBistro2024"
+      },
+      "parking": {
+        "valet": "Available evenings, complimentary with dinner reservations",
+        "street": "Street parking available",
+        "garage": "Public garage two blocks away"
+      },
+      "atmosphere": {
+        "description": "Romantic lighting, live jazz on weekends, family-friendly until 8 PM",
+        "music": "Live jazz Friday-Saturday evenings",
+        "noise_level": "Moderate, intimate conversation-friendly"
+      },
+      "private_dining": {
+        "available": true,
+        "capacity": 20,
+        "features": "Private dining room with AV capabilities",
+        "booking": "Advance booking required"
+      },
+      "special_services": [
+        "Wine pairing dinners",
+        "Cooking classes", 
+        "Private chef events",
+        "Catering services",
+        "Event planning"
+      ]
+    },
+    
+    "staff": {
+      "executive_chef": {
+        "name": "Chef Marco",
+        "background": "Trained in Milan and Rome", 
+        "specialties": ["Traditional Italian", "Seasonal cuisine", "Wine pairings"]
+      },
+      "sommelier": {
+        "available": "Thursday-Sunday evenings",
+        "services": ["Wine pairings", "Wine education", "Private tastings"]
+      },
+      "languages": ["English", "Italian", "Spanish"],
+      "service_style": "Attentive but unobtrusive European-style service"
+    }
+  },
+  
+  "conversation_settings": {
+    "brand_voice": {
+      "tone": "warm, professional, knowledgeable",
+      "personality": "friendly Italian hospitality",
+      "formality": "polite but approachable"
+    },
+    "default_responses": {
+      "greeting": [
+        "Buongiorno! Welcome to {restaurant_name}. How may I assist you today?",
+        "Hello! I'm here to help with reservations and answer questions about our authentic Italian cuisine.",
+        "Welcome! What can I do for you at {restaurant_name} today?"
+      ],
+      "booking_complete": [
+        "Perfetto! Your reservation is confirmed. We look forward to welcoming you!",
+        "Excellent! Your table is reserved. Grazie and see you soon!",
+        "Wonderful! Your reservation is all set. We can't wait to serve you!"
+      ],
+      "error": [
+        "Mi scusi, I didn't catch that. Could you please repeat?", 
+        "I apologize, could you rephrase that for me?",
+        "Pardon me, I didn't understand. Can you try saying that differently?"
+      ]
+    },
+    "customization": {
+      "use_restaurant_language": true,
+      "include_cultural_touches": true,
+      "mention_chef_specials": true,
+      "promote_wine_pairings": true
+    }
+  },
+  
+  "business_rules": {
+    "booking_constraints": {
+      "max_party_size": 12,
+      "min_advance_booking_hours": 2,
+      "max_advance_booking_days": 60,
+      "blocked_times": [],
+      "special_event_dates": []
+    },
+    "pricing_rules": {
+      "currency": "USD",
+      "tax_rate": 0.08,
+      "service_charge_large_parties": 0.18,
+      "deposit_required_party_size": 8
+    },
+    "operational": {
+      "kitchen_closes_minutes_before": 30,
+      "last_seating_minutes_before": 60,
+      "table_turnover_minutes": 90
+    }
+  }
+}
