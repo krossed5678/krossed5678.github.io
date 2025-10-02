@@ -21,7 +21,7 @@ class BookingManager {
   }
 
   addBookingToUI(booking) {
-    console.log('➕ Adding booking to UI:', booking);
+    console.log('Adding booking to UI:', booking);
     
     // Add to local array
     this.bookings.unshift(booking);
@@ -36,7 +36,7 @@ class BookingManager {
   renderBookings() {
     const container = document.getElementById('bookings-list');
     if (!container) {
-      console.warn('⚠️ Bookings container not found');
+      console.warn('⚠️⚠️ Bookings container not found ⚠️⚠️');
       return;
     }
 
