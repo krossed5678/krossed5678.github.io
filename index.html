@@ -196,6 +196,12 @@
                     </svg>
                     Test TTS
                   </button>
+                  <button id="test-inhouse" class="px-4 py-2 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition-colors flex items-center">
+                    <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                    </svg>
+                    Test In-House
+                  </button>
                 </div>
                 
                   <div class="bg-white rounded-lg p-4 border">
@@ -533,9 +539,18 @@
   <script src="js/ui-manager.js" defer></script>
   <script src="js/audio-recorder.js" defer></script>
   <script src="js/api-client.js" defer></script>
+  
+  <!-- In-House Processing Modules (No External APIs) -->
+  <script src="js/local-conversation-engine.js" defer></script>
+  <script src="js/in-house-voice-processor.js" defer></script>
+  <script src="js/in-house-voice-conversation.js" defer></script>
+  
+  <!-- Legacy External API Modules (Fallback) -->
   <script src="js/voice-conversation.js" defer></script>
   <script src="js/booking-manager.js" defer></script>
   <script src="js/social-media-manager.js" defer></script>
+  
+  <!-- Main Application Controller -->
   <script src="js/app-main.js" defer></script>
   
   <!-- Legacy functionality module -->
