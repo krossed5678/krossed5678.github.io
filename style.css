@@ -401,3 +401,1119 @@ body {
 
 /* Minor utilities */
 .hidden { display: none !important; }
+
+/* === Phone System Styles === */
+.phone-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: 280px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  border: 1px solid #e5e7eb;
+  z-index: 1000;
+}
+
+.phone-header {
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: white;
+  border-radius: 12px 12px 0 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+}
+
+.phone-body {
+  padding: 16px;
+}
+
+.phone-number-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  text-align: center;
+}
+
+.dial-pad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.dial-btn {
+  aspect-ratio: 1;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #f9fafb;
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.dial-btn:hover {
+  background: #f3f4f6;
+  transform: scale(1.05);
+}
+
+.dial-btn:active {
+  transform: scale(0.95);
+  background: #e5e7eb;
+}
+
+.dial-btn-letters {
+  font-size: 10px;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+.call-controls {
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.call-btn {
+  flex: 1;
+  padding: 8px;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.call-btn-call {
+  background: #10b981;
+  color: white;
+}
+
+.call-btn-hangup {
+  background: #ef4444;
+  color: white;
+}
+
+.call-btn-mute {
+  background: #f59e0b;
+  color: white;
+}
+
+.call-btn:hover {
+  opacity: 0.8;
+  transform: translateY(-1px);
+}
+
+.call-status {
+  text-align: center;
+  padding: 8px;
+  margin: 8px 0;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.status-idle {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.status-calling {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-connected {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.status-recording {
+  background: #fecaca;
+  color: #991b1b;
+}
+
+.phone-minimize {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.phone-minimize:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.phone-minimized {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  right: 20px;
+  top: 20px;
+}
+
+.phone-minimized .phone-header {
+  border-radius: 50%;
+  padding: 0;
+  height: 100%;
+  justify-content: center;
+}
+
+.phone-minimized .phone-body {
+  display: none;
+}
+
+/* SIP Client Styles */
+.sip-config {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.sip-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+
+.sip-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ef4444;
+}
+
+.sip-indicator.connected {
+  background: #10b981;
+}
+
+.sip-config-form {
+  display: none;
+}
+
+.sip-config-form.active {
+  display: block;
+}
+
+.sip-config-input {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.sip-config-btn {
+  width: 100%;
+  padding: 6px;
+  border: none;
+  border-radius: 4px;
+  background: #3b82f6;
+  color: white;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.incoming-call-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.incoming-call-dialog {
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  text-align: center;
+  max-width: 300px;
+  width: 90%;
+}
+
+.incoming-call-number {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: #111827;
+}
+
+.incoming-call-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.incoming-call-btn {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.answer-btn {
+  background: #10b981;
+  color: white;
+}
+
+.decline-btn {
+  background: #ef4444;
+  color: white;
+}
+
+.incoming-call-btn:hover {
+  opacity: 0.8;
+  transform: translateY(-1px);
+}
+
+/* === VoIP Number Manager Styles === */
+.voip-manager-container {
+  position: fixed;
+  top: 100px;
+  right: 20px;
+  width: 350px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  border: 1px solid #e5e7eb;
+  z-index: 999;
+}
+
+.voip-manager-container.minimized {
+  width: 200px;
+  height: auto;
+}
+
+.voip-manager-container.minimized .voip-manager-body {
+  display: none;
+}
+
+.voip-manager-header {
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  border-radius: 12px 12px 0 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+}
+
+.voip-minimize-btn {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.voip-minimize-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.voip-manager-body {
+  padding: 16px;
+}
+
+.voip-tabs {
+  display: flex;
+  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 16px;
+}
+
+.voip-tab {
+  flex: 1;
+  padding: 8px 12px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 12px;
+  color: #6b7280;
+  border-bottom: 2px solid transparent;
+}
+
+.voip-tab.active {
+  color: #10b981;
+  border-bottom-color: #10b981;
+}
+
+.voip-panel {
+  display: none;
+}
+
+.voip-panel.active {
+  display: block;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.form-grid input,
+.form-grid select,
+.form-grid button {
+  padding: 6px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.form-grid button {
+  grid-column: span 2;
+  background: #10b981;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.number-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+.number-info {
+  flex: 1;
+}
+
+.number-display {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.number-details {
+  display: flex;
+  gap: 4px;
+  margin: 4px 0;
+}
+
+.provider-badge,
+.routing-badge,
+.status-badge {
+  padding: 2px 6px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.provider-badge {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.routing-badge {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-badge.active {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.number-stats {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.number-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.analytics-summary {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.metric-card {
+  text-align: center;
+  padding: 12px;
+  background: #f9fafb;
+  border-radius: 6px;
+}
+
+.metric-value {
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.metric-label {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 4px;
+}
+
+.provider-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.provider-name {
+  font-weight: 500;
+}
+
+.provider-stats {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.provider-cost {
+  font-weight: 600;
+  color: #10b981;
+}
+
+/* === Twilio Integration Styles === */
+.twilio-config-container {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  margin: 16px 0;
+}
+
+.twilio-config-header {
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+  border-radius: 8px 8px 0 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.3);
+  transition: .4s;
+  border-radius: 24px;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+
+input:checked + .toggle-slider {
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
+input:checked + .toggle-slider:before {
+  transform: translateX(20px);
+}
+
+.twilio-config-body {
+  padding: 16px;
+}
+
+.twilio-config-body.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.config-section {
+  margin-bottom: 20px;
+}
+
+.config-section h5 {
+  margin-bottom: 8px;
+  color: #374151;
+  font-weight: 600;
+}
+
+.usage-stats {
+  background: #f9fafb;
+  padding: 12px;
+  border-radius: 6px;
+}
+
+.usage-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.usage-item:last-child {
+  border-bottom: none;
+}
+
+.status-display {
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+.status-connected {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.status-disabled {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.status-unconfigured {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-connecting {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.config-actions {
+  display: flex;
+  gap: 8px;
+  margin: 16px 0;
+}
+
+.setup-instructions {
+  background: #f0f9ff;
+  padding: 12px;
+  border-radius: 6px;
+  border-left: 4px solid #0ea5e9;
+}
+
+.setup-instructions ol {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.setup-instructions li {
+  margin-bottom: 4px;
+  font-size: 13px;
+}
+
+.twilio-setup-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+  position: relative;
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  max-width: 600px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.modal-content h3 {
+  margin-bottom: 16px;
+}
+
+.modal-content pre {
+  background: #f3f4f6;
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  overflow-x: auto;
+  margin-bottom: 16px;
+}
+
+/* === Transcription Display Styles === */
+.transcription-overlay {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  right: 320px;
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 16px;
+  border-radius: 8px;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 998;
+}
+
+.transcription-entry {
+  margin-bottom: 8px;
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.transcription-timestamp {
+  color: #10b981;
+  font-size: 12px;
+  margin-right: 8px;
+}
+
+.transcription-speaker {
+  color: #f59e0b;
+  font-weight: 600;
+  margin-right: 8px;
+}
+
+.transcription-text {
+  color: white;
+}
+
+.interim-transcription {
+  color: #6b7280;
+  font-style: italic;
+}
+
+/* === Unified Telephony Controller Styles === */
+.telephony-control-container {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  width: 400px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  border: 1px solid #e5e7eb;
+  z-index: 1001;
+}
+
+.telephony-control-container.minimized {
+  width: 250px;
+  height: auto;
+}
+
+.telephony-control-container.minimized .telephony-control-body {
+  display: none;
+}
+
+.telephony-control-header {
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  color: white;
+  border-radius: 12px 12px 0 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+}
+
+.control-minimize-btn {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.control-minimize-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.telephony-control-body {
+  padding: 16px;
+}
+
+.provider-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+.provider-info {
+  flex: 1;
+}
+
+.provider-name {
+  font-weight: 600;
+  font-size: 14px;
+  display: block;
+}
+
+.provider-status.enabled {
+  color: #10b981;
+}
+
+.provider-status.disabled {
+  color: #ef4444;
+}
+
+.provider-stats {
+  font-size: 11px;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+.provider-actions {
+  margin-left: 8px;
+}
+
+.active-calls {
+  margin: 16px 0;
+}
+
+.active-calls h4 {
+  margin-bottom: 8px;
+  color: #374151;
+}
+
+.no-calls {
+  text-align: center;
+  color: #6b7280;
+  font-style: italic;
+  padding: 12px;
+}
+
+.active-call-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px;
+  border: 1px solid #fbbf24;
+  background: #fef3c7;
+  border-radius: 6px;
+  margin-bottom: 4px;
+}
+
+.call-info {
+  flex: 1;
+}
+
+.call-number {
+  font-weight: 600;
+  font-size: 14px;
+  display: block;
+}
+
+.call-status {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 12px;
+  margin-right: 8px;
+}
+
+.call-status.connecting {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.call-status.connected {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.call-duration {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.system-controls {
+  margin: 16px 0;
+  padding: 12px;
+  background: #f9fafb;
+  border-radius: 6px;
+}
+
+.system-controls label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.system-controls input[type="checkbox"] {
+  margin-right: 8px;
+}
+
+/* === VoIP Number Manager Styles === */
+.voip-manager-container {
+  position: fixed;
+  top: 100px;
+  right: 20px;
+  width: 350px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  border: 1px solid #e5e7eb;
+  z-index: 999;
+}
+
+.voip-manager-container.minimized {
+  width: 200px;
+  height: auto;
+}
+
+.voip-manager-container.minimized .voip-manager-body {
+  display: none;
+}
+
+.voip-manager-header {
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  border-radius: 12px 12px 0 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+}
+
+.voip-minimize-btn {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.voip-minimize-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.voip-manager-body {
+  padding: 16px;
+}
+
+.voip-tabs {
+  display: flex;
+  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 16px;
+}
+
+.voip-tab {
+  flex: 1;
+  padding: 8px 12px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 12px;
+  color: #6b7280;
+  border-bottom: 2px solid transparent;
+}
+
+.voip-tab.active {
+  color: #10b981;
+  border-bottom-color: #10b981;
+}
+
+.voip-panel {
+  display: none;
+}
+
+.voip-panel.active {
+  display: block;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.form-grid input,
+.form-grid select,
+.form-grid button {
+  padding: 6px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.form-grid button {
+  grid-column: span 2;
+  background: #10b981;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.number-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+.number-info {
+  flex: 1;
+}
+
+.number-display {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.number-details {
+  display: flex;
+  gap: 4px;
+  margin: 4px 0;
+}
+
+.provider-badge,
+.routing-badge,
+.status-badge {
+  padding: 2px 6px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.provider-badge {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.routing-badge {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-badge.active {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.number-stats {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.number-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.analytics-summary {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.metric-card {
+  text-align: center;
+  padding: 12px;
+  background: #f9fafb;
+  border-radius: 6px;
+}
+
+.metric-value {
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.metric-label {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 4px;
+}
+
+.provider-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.provider-name {
+  font-weight: 500;
+}
+
+.provider-stats {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.provider-cost {
+  font-weight: 600;
+  color: #10b981;
+}
