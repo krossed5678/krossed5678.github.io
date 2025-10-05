@@ -1,0 +1,479 @@
+/**
+ * CSS Compatibility Fixes
+ * Adds vendor prefixes and fallbacks for better cross-browser support
+ */
+
+/* CSS Variables Fallbacks */
+:root {
+  --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --primary-color: #4f46e5;
+  --secondary-color: #6b7280;
+  --success-color: #10b981;
+  --warning-color: #f59e0b;
+  --error-color: #ef4444;
+  --background-color: #ffffff;
+  --text-color: #1f2937;
+  --border-color: #e5e7eb;
+}
+
+/* Flexbox with vendor prefixes */
+.flex {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+}
+
+.inline-flex {
+  display: -webkit-inline-box;
+  display: -ms-inline-flexbox;
+  display: inline-flex;
+}
+
+.flex-col {
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+  -ms-flex-direction: column;
+  flex-direction: column;
+}
+
+.flex-row {
+  -webkit-box-orient: horizontal;
+  -webkit-box-direction: normal;
+  -ms-flex-direction: row;
+  flex-direction: row;
+}
+
+.flex-wrap {
+  -ms-flex-wrap: wrap;
+  flex-wrap: wrap;
+}
+
+.items-center {
+  -webkit-box-align: center;
+  -ms-flex-align: center;
+  align-items: center;
+}
+
+.items-start {
+  -webkit-box-align: start;
+  -ms-flex-align: start;
+  align-items: flex-start;
+}
+
+.justify-center {
+  -webkit-box-pack: center;
+  -ms-flex-pack: center;
+  justify-content: center;
+}
+
+.justify-between {
+  -webkit-box-pack: justify;
+  -ms-flex-pack: justify;
+  justify-content: space-between;
+}
+
+.justify-end {
+  -webkit-box-pack: end;
+  -ms-flex-pack: end;
+  justify-content: flex-end;
+}
+
+/* Grid fallback for older browsers */
+@supports not (display: grid) {
+  .grid {
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -ms-flex-wrap: wrap;
+    flex-wrap: wrap;
+  }
+  
+  .grid-cols-1 > * { width: 100%; }
+  .grid-cols-2 > * { width: 50%; }
+  .grid-cols-3 > * { width: 33.333%; }
+  .grid-cols-4 > * { width: 25%; }
+  .grid-cols-6 > * { width: 16.666%; }
+}
+
+/* Transform with vendor prefixes */
+.transform {
+  -webkit-transform: translateZ(0);
+  -moz-transform: translateZ(0);
+  -ms-transform: translateZ(0);
+  transform: translateZ(0);
+}
+
+.rotate-180 {
+  -webkit-transform: rotate(180deg);
+  -moz-transform: rotate(180deg);
+  -ms-transform: rotate(180deg);
+  transform: rotate(180deg);
+}
+
+.scale-95 {
+  -webkit-transform: scale(0.95);
+  -moz-transform: scale(0.95);
+  -ms-transform: scale(0.95);
+  transform: scale(0.95);
+}
+
+.scale-105 {
+  -webkit-transform: scale(1.05);
+  -moz-transform: scale(1.05);
+  -ms-transform: scale(1.05);
+  transform: scale(1.05);
+}
+
+/* Transitions with vendor prefixes */
+.transition {
+  -webkit-transition: all 0.15s ease-in-out;
+  -moz-transition: all 0.15s ease-in-out;
+  -ms-transition: all 0.15s ease-in-out;
+  transition: all 0.15s ease-in-out;
+}
+
+.transition-colors {
+  -webkit-transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out;
+  -moz-transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out;
+  -ms-transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out;
+  transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out;
+}
+
+.transition-transform {
+  -webkit-transition: -webkit-transform 0.15s ease-in-out;
+  -moz-transition: -moz-transform 0.15s ease-in-out;
+  -ms-transition: -ms-transform 0.15s ease-in-out;
+  transition: transform 0.15s ease-in-out;
+}
+
+/* Backdrop filter fallback */
+.backdrop-blur {
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+@supports not (backdrop-filter: blur(10px)) {
+  .backdrop-blur {
+    background: rgba(255, 255, 255, 0.9);
+    background: rgba(var(--background-color), 0.9);
+  }
+  
+  .backdrop-blur-dark {
+    background: rgba(0, 0, 0, 0.8);
+  }
+}
+
+/* Box shadow with better browser support */
+.shadow {
+  -webkit-box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  -moz-box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+}
+
+.shadow-lg {
+  -webkit-box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  -moz-box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.shadow-xl {
+  -webkit-box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  -moz-box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Border radius with vendor prefixes for older browsers */
+.rounded {
+  -webkit-border-radius: 0.25rem;
+  -moz-border-radius: 0.25rem;
+  border-radius: 0.25rem;
+}
+
+.rounded-md {
+  -webkit-border-radius: 0.375rem;
+  -moz-border-radius: 0.375rem;
+  border-radius: 0.375rem;
+}
+
+.rounded-lg {
+  -webkit-border-radius: 0.5rem;
+  -moz-border-radius: 0.5rem;
+  border-radius: 0.5rem;
+}
+
+.rounded-full {
+  -webkit-border-radius: 9999px;
+  -moz-border-radius: 9999px;
+  border-radius: 9999px;
+}
+
+/* Gradient fallbacks */
+.bg-gradient-to-r {
+  background-image: -webkit-linear-gradient(left, var(--tw-gradient-stops));
+  background-image: -moz-linear-gradient(left, var(--tw-gradient-stops));
+  background-image: -ms-linear-gradient(left, var(--tw-gradient-stops));
+  background-image: linear-gradient(to right, var(--tw-gradient-stops));
+}
+
+.bg-gradient-to-br {
+  background-image: -webkit-linear-gradient(top left, var(--tw-gradient-stops));
+  background-image: -moz-linear-gradient(top left, var(--tw-gradient-stops));
+  background-image: -ms-linear-gradient(top left, var(--tw-gradient-stops));
+  background-image: linear-gradient(to bottom right, var(--tw-gradient-stops));
+}
+
+/* CSS Variables fallback for older browsers */
+@supports not (color: var(--color)) {
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: #1f2937;
+    background-color: #ffffff;
+  }
+  
+  .text-primary { color: #4f46e5; }
+  .text-secondary { color: #6b7280; }
+  .text-success { color: #10b981; }
+  .text-warning { color: #f59e0b; }
+  .text-error { color: #ef4444; }
+  
+  .bg-primary { background-color: #4f46e5; }
+  .bg-secondary { background-color: #6b7280; }
+  .bg-success { background-color: #10b981; }
+  .bg-warning { background-color: #f59e0b; }
+  .bg-error { background-color: #ef4444; }
+  
+  .border-primary { border-color: #4f46e5; }
+  .border-secondary { border-color: #6b7280; }
+}
+
+/* User select with vendor prefixes */
+.select-none {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.select-all {
+  -webkit-user-select: all;
+  -moz-user-select: all;
+  -ms-user-select: all;
+  user-select: all;
+}
+
+/* Appearance reset for form elements */
+button, 
+input[type="button"], 
+input[type="submit"], 
+input[type="reset"] {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+  background-position: right 0.5rem center;
+  background-repeat: no-repeat;
+  background-size: 1.5em 1.5em;
+  padding-right: 2.5rem;
+}
+
+/* Webkit scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  -webkit-border-radius: 4px;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  -webkit-border-radius: 4px;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a1a1a1;
+}
+
+/* Firefox scrollbar styling */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #c1c1c1 #f1f1f1;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .btn {
+    border: 2px solid currentColor;
+  }
+  
+  .card {
+    border: 2px solid currentColor;
+  }
+  
+  .input {
+    border: 2px solid currentColor;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    -webkit-animation-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    -webkit-animation-iteration-count: 1 !important;
+    animation-iteration-count: 1 !important;
+    -webkit-transition-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background-color: #1f2937;
+    --text-color: #f9fafb;
+    --border-color: #374151;
+  }
+  
+  body {
+    background-color: #1f2937;
+    color: #f9fafb;
+  }
+  
+  .card {
+    background-color: #374151;
+    border-color: #4b5563;
+  }
+  
+  .input {
+    background-color: #374151;
+    border-color: #4b5563;
+    color: #f9fafb;
+  }
+  
+  .btn-secondary {
+    background-color: #4b5563;
+    color: #f9fafb;
+  }
+}
+
+/* Mobile-specific fixes */
+@media (max-width: 768px) {
+  /* Ensure minimum touch target sizes */
+  button,
+  .btn,
+  input[type="button"],
+  input[type="submit"],
+  a[onclick],
+  [onclick] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Prevent zoom on input focus for iOS */
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+    -webkit-border-radius: 0;
+    border-radius: 0;
+  }
+  
+  /* Fix viewport height on mobile */
+  .min-h-screen {
+    min-height: 100vh;
+    min-height: calc(var(--vh, 1vh) * 100);
+  }
+  
+  /* Improve touch scrolling */
+  * {
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Remove tap highlight */
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* iOS specific fixes */
+@supports (-webkit-touch-callout: none) {
+  /* Fix input styling on iOS */
+  input,
+  textarea,
+  select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    -webkit-border-radius: 0;
+    border-radius: 0;
+  }
+  
+  /* Fix button styling on iOS */
+  button,
+  input[type="button"],
+  input[type="submit"] {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    -webkit-border-radius: 4px;
+    border-radius: 4px;
+  }
+}
+
+/* Flexbox gap fallback for older browsers */
+@supports not (gap: 1rem) {
+  .gap-1 > * + * { margin-left: 0.25rem; }
+  .gap-2 > * + * { margin-left: 0.5rem; }
+  .gap-3 > * + * { margin-left: 0.75rem; }
+  .gap-4 > * + * { margin-left: 1rem; }
+  .gap-6 > * + * { margin-left: 1.5rem; }
+  .gap-8 > * + * { margin-left: 2rem; }
+  
+  .flex-col.gap-1 > * + * { margin-left: 0; margin-top: 0.25rem; }
+  .flex-col.gap-2 > * + * { margin-left: 0; margin-top: 0.5rem; }
+  .flex-col.gap-3 > * + * { margin-left: 0; margin-top: 0.75rem; }
+  .flex-col.gap-4 > * + * { margin-left: 0; margin-top: 1rem; }
+  .flex-col.gap-6 > * + * { margin-left: 0; margin-top: 1.5rem; }
+  .flex-col.gap-8 > * + * { margin-left: 0; margin-top: 2rem; }
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  .print-only {
+    display: block !important;
+  }
+  
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  
+  .shadow,
+  .shadow-lg,
+  .shadow-xl {
+    -webkit-box-shadow: none !important;
+    box-shadow: none !important;
+  }
+}

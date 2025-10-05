@@ -311,7 +311,8 @@ class VoIPNumberManager {
         const container = document.createElement('div');
         container.id = 'voip-manager';
         container.className = 'voip-manager-container';
-        container.innerHTML = `
+        // Use safe HTML setting
+        const htmlContent = `
             <div class="voip-manager-header">
                 <h3>📞 VoIP Number Manager</h3>
                 <button class="voip-minimize-btn" onclick="this.closest('.voip-manager-container').classList.toggle('minimized')">−</button>
@@ -368,6 +369,12 @@ class VoIPNumberManager {
                 </div>
             </div>
         `;
+        
+        if (window.safeSetHTML) {
+            window.safeSetHTML(container, htmlContent);
+        } else {
+            container.innerHTML = htmlContent;
+        }
 
         document.body.appendChild(container);
         this.interfaceElement = container;
@@ -422,29 +429,40 @@ class VoIPNumberManager {
 
     updateNumbersList() {
         const container = this.interfaceElement.querySelector('#numbers-list');
-        container.innerHTML = '';
+        if (container) {
+            container.innerHTML = '';
 
-        for (const [number, config] of this.numbers) {
-            const numberElement = document.createElement('div');
-            numberElement.className = 'number-item';
-            numberElement.innerHTML = `
-                <div class="number-info">
-                    <div class="number-display">${number}</div>
-                    <div class="number-details">
-                        <span class="provider-badge">${config.provider}</span>
-                        <span class="routing-badge">${config.routing}</span>
-                        <span class="status-badge ${config.status}">${config.status}</span>
+            for (const [number, config] of this.numbers) {
+                const numberElement = document.createElement('div');
+                numberElement.className = 'number-item';
+                const numberHTML = `
+                    <div class="number-info">
+                        <div class="number-display">${number}</div>
+                        <div class="number-details">
+                            <span class="provider-badge">${config.provider}</span>
+                            <span class="routing-badge">${config.routing}</span>
+                            <span class="status-badge ${config.status}">${config.status}</span>
+                        </div>
+                        <div class="number-stats">
+                            Calls: ${config.callCount} | Minutes: ${config.totalMinutes}
+                        </div>
                     </div>
-                    <div class="number-stats">
-                        Calls: ${config.callCount} | Minutes: ${config.totalMinutes}
+                    <div class="number-actions">
+                        <button onclick="voipManager.editNumber('${number}')" class="btn btn-sm">Edit</button>
+                        <button onclick="voipManager.removeNumber('${number}')" class="btn btn-sm btn-danger">Remove</button>
                     </div>
-                </div>
-                <div class="number-actions">
-                    <button onclick="voipManager.editNumber('${number}')" class="btn btn-sm">Edit</button>
-                    <button onclick="voipManager.removeNumber('${number}')" class="btn btn-sm btn-danger">Remove</button>
-                </div>
-            `;
-            container.appendChild(numberElement);
+                `;
+                
+                if (window.safeSetHTML) {
+                    window.safeSetHTML(numberElement, numberHTML);
+                } else {
+                    numberElement.innerHTML = numberHTML;
+                }
+                
+                if (container) {
+                    container.appendChild(numberElement);
+                }
+            }
         }
     }
 
@@ -452,7 +470,7 @@ class VoIPNumberManager {
         const analytics = this.generateAnalytics();
         const container = this.interfaceElement.querySelector('#analytics-display');
         
-        container.innerHTML = `
+        const analyticsHTML = `
             <div class="analytics-summary">
                 <div class="metric-card">
                     <div class="metric-value">${analytics.totalNumbers}</div>
@@ -482,6 +500,12 @@ class VoIPNumberManager {
                 `).join('')}
             </div>
         `;
+        
+        if (window.safeSetHTML) {
+            window.safeSetHTML(container, analyticsHTML);
+        } else {
+            container.innerHTML = analyticsHTML;
+        }
     }
 
     async addNumberFromForm() {
@@ -491,7 +515,11 @@ class VoIPNumberManager {
             const routing = document.getElementById('new-routing').value;
 
             if (!number) {
-                alert('Please enter a phone number');
+                if (window.safeNotify) {
+                    window.safeNotify('Please enter a phone number', 'warning');
+                } else {
+                    console.warn('Please enter a phone number');
+                }
                 return;
             }
 
@@ -501,12 +529,24 @@ class VoIPNumberManager {
                 routing
             });
 
-            // Clear form
-            document.getElementById('new-number').value = '';
+            // Clear form safely
+            const numberInput = window.safeGetElement('new-number');
+            if (numberInput) {
+                numberInput.value = '';
+            }
             
-            alert(`Number ${number} added successfully!`);
+            if (window.safeNotify) {
+                window.safeNotify(`Number ${number} added successfully!`, 'success');
+            } else {
+                console.log(`Number ${number} added successfully!`);
+            }
         } catch (error) {
-            alert(`Error adding number: ${error.message}`);
+            console.error('Error adding VoIP number:', error);
+            if (window.safeNotify) {
+                window.safeNotify(`Error adding number: ${error.message}`, 'error');
+            } else {
+                console.error(`Error adding number: ${error.message}`);
+            }
         }
     }
 
