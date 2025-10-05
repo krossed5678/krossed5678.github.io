@@ -185,6 +185,33 @@ class UnifiedTelephonyController {
         console.log(`Incoming call from ${phoneNumber} via ${provider}`);
         
         try {
+            // First, check if we need to queue the call
+            if (window.callQueueManager) {
+                const queueResult = await callQueueManager.addToQueue({
+                    ...callData,
+                    customerData: await this.getCustomerData(phoneNumber)
+                });
+                
+                if (!queueResult.success) {
+                    // Queue full or other queue issue
+                    return {
+                        action: 'reject',
+                        reason: queueResult.reason,
+                        message: queueResult.message
+                    };
+                }
+                
+                // If call was queued, return queue info
+                if (queueResult.position > 0) {
+                    return {
+                        action: 'queue',
+                        position: queueResult.position,
+                        estimatedWait: queueResult.estimatedWait,
+                        message: queueResult.message
+                    };
+                }
+            }
+            
             // Route the call through VoIP manager
             let routingDecision = { action: 'answer', handler: 'ai-agent' };
             
@@ -324,6 +351,11 @@ class UnifiedTelephonyController {
             if (window.voipManager) {
                 await voipManager.updateCallCost(callId, duration);
             }
+            
+            // Notify queue manager of call completion
+            if (window.callQueueManager) {
+                callQueueManager.onCallCompleted(callId, duration / 1000);
+            }
 
             console.log(`Call ${callId} ended. Duration: ${minutes} minutes`);
 
@@ -332,6 +364,26 @@ class UnifiedTelephonyController {
         } finally {
             this.callHandlers.delete(callId);
         }
+    }
+
+    async getCustomerData(phoneNumber) {
+        // Get customer data for queue prioritization
+        // This could integrate with a customer database
+        const savedCustomers = JSON.parse(localStorage.getItem('customer-data') || '{}');
+        
+        const customerData = savedCustomers[phoneNumber] || {
+            isVip: false,
+            previousBookings: 0,
+            lastVisit: null,
+            totalSpent: 0
+        };
+        
+        // Simple VIP detection (could be enhanced)
+        if (customerData.previousBookings > 5 || customerData.totalSpent > 500) {
+            customerData.isVip = true;
+        }
+        
+        return customerData;
     }
 
     getOptimalProvider(type = 'outbound') {

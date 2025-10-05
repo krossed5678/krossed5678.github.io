@@ -890,6 +890,15 @@ class LocalConversationEngine {
       });
     }
     
+    // Emit booking event for SMS system
+    const bookingEvent = new CustomEvent('bookingCreated', {
+      detail: {
+        ...booking,
+        restaurant_name: this.knowledgeBase.restaurant.name
+      }
+    });
+    document.dispatchEvent(bookingEvent);
+    
     return booking;
   }
 
