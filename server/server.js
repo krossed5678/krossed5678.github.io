@@ -114,8 +114,19 @@ app.post('/webhooks/process-booking', async (req, res) => {
   console.log(`🎵 Processing recording for call ${callSid}: ${recordingUrl}`);
   
   if (!recordingUrl) {
-    twiml.say('I\'m sorry, I didn\'t receive your recording. Please try calling again.');
-    twiml.hangup();
+    twiml.say('I\'m sorry, I didn\'t receive your recording. Please say your request again.');
+    
+    // Record again instead of hanging up
+    twiml.record({
+      timeout: 10,
+      finishOnKey: '#',
+      action: `${SERVER_URL}/webhooks/process-booking`,
+      method: 'POST',
+      recordingStatusCallback: `${SERVER_URL}/webhooks/recording-status`,
+      transcribe: false,
+      maxLength: 30
+    });
+    
     res.type('text/xml');
     res.send(twiml.toString());
     return;
@@ -139,17 +150,40 @@ app.post('/webhooks/process-booking', async (req, res) => {
         language: 'en-US'
       }, conversationResult.aiResponse);
       
+      // Check if we need more information (don't hang up!)
+      if (conversationResult.action === 'booking_created') {
+        console.log('✅ Booking completed, ending call');
+        twiml.say('Have a wonderful day!');
+        twiml.hangup();
+      } else {
+        console.log('🔄 Need more info, continuing conversation...');
+        // Ask for more information and record again
+        twiml.record({
+          timeout: 10,
+          finishOnKey: '#',
+          action: `${SERVER_URL}/webhooks/process-booking`,
+          method: 'POST',
+          recordingStatusCallback: `${SERVER_URL}/webhooks/recording-status`,
+          transcribe: false,
+          maxLength: 30
+        });
+        
+        // Fallback if no response
+        twiml.say('I didn\'t catch that. Please try again or press pound when finished.');
+      }
+      
     } else {
       // Fallback response
       twiml.say('I apologize, but I\'m having trouble processing your request right now. Please try calling again in a moment.');
+      twiml.hangup();
     }
     
   } catch (error) {
     console.error('Error processing booking:', error);
     twiml.say('I\'m sorry, there was a technical issue processing your request. Please try calling again later.');
+    twiml.hangup();
   }
 
-  twiml.hangup();
   res.type('text/xml');
   res.send(twiml.toString());
 });
@@ -187,6 +221,18 @@ app.get('/api/calls', (req, res) => {
     ...data
   }));
   res.json({ activeCalls: calls, totalBookings: bookings.length });
+});
+
+// Get conversation sessions (for debugging)
+app.get('/api/sessions', (req, res) => {
+  const sessions = Array.from(conversationSessions.entries()).map(([sessionId, session]) => ({
+    sessionId,
+    startTime: session.startTime,
+    attempts: session.attempts,
+    extractedInfo: session.extractedInfo,
+    conversationLength: session.conversationHistory.length
+  }));
+  res.json({ sessions, totalSessions: sessions.length });
 });
 
 // Mistral AI conversation endpoint - handles speech-to-text, understanding, and response generation
@@ -355,8 +401,8 @@ async function processPhoneConversation(recordingUrl, callSid, phoneNumber) {
       };
     }
 
-    // Step 2: Let Mistral AI handle the conversation and booking
-    const conversationResult = await handleBookingConversation(transcription);
+    // Step 2: Let Mistral AI handle the conversation and booking (with session tracking)
+    const conversationResult = await handleBookingConversation(transcription, callSid, phoneNumber);
     
     // Add phone number to booking if one was created
     if (conversationResult.booking) {
@@ -560,7 +606,8 @@ app.post('/api/text-conversation', async (req, res) => {
     }
 
     console.log('🤖 Processing text conversation with Mistral AI...');
-    const conversationResult = await handleBookingConversation(transcript);
+    const sessionId = req.body.sessionId || 'web-' + Date.now();
+    const conversationResult = await handleBookingConversation(transcript, sessionId, null);
     console.log('✅ Text conversation result:', conversationResult);
 
     const response = {
@@ -584,33 +631,95 @@ app.post('/api/text-conversation', async (req, res) => {
   }
 });
 
-// Handle full booking conversation with Mistral AI - no manual parsing needed!
-async function handleBookingConversation(customerSpeech) {
+// Store conversation sessions for multi-turn conversations
+const conversationSessions = new Map();
+
+// Handle full booking conversation with Mistral AI - probes until complete!
+async function handleBookingConversation(customerSpeech, sessionId = null, phoneNumber = null) {
   console.log('🤖 === HANDLING BOOKING CONVERSATION ===');
   console.log('Customer speech:', customerSpeech);
+  console.log('Session ID:', sessionId);
   
   try {
-    console.log('📝 Building system prompt...');
-    const systemPrompt = `You are a professional restaurant booking assistant AI. Your job is to:
+    // Get or create conversation session
+    const sessionKey = sessionId || phoneNumber || 'web-session';
+    let session = conversationSessions.get(sessionKey);
+    
+    if (!session) {
+      session = {
+        id: sessionKey,
+        startTime: new Date(),
+        conversationHistory: [],
+        extractedInfo: {
+          customer_name: null,
+          party_size: null,
+          date: null,
+          time: null,
+          phone_number: phoneNumber,
+          special_requests: null
+        },
+        lastResponse: null,
+        attempts: 0
+      };
+      conversationSessions.set(sessionKey, session);
+      console.log('🆕 Created new conversation session:', sessionKey);
+    }
+    
+    // Add customer message to history
+    session.conversationHistory.push({
+      role: 'customer',
+      message: customerSpeech,
+      timestamp: new Date()
+    });
+    session.attempts++;
+    
+    console.log('📝 Building probing system prompt...');
+    const systemPrompt = `You are a professional restaurant booking assistant AI. Your job is to persistently but politely gather ALL required booking information and ONLY create bookings when complete.
 
-1. Understand customer booking requests from speech
-2. Extract booking details when available
-3. Create bookings when you have enough information  
-4. Ask for missing information politely
-5. Confirm bookings clearly
-6. Be friendly and professional
+REQUIRED BOOKING INFORMATION:
+- Customer name (first and last)
+- Party size (number of people)  
+- Date (specific date, not just "tonight" or "tomorrow")
+- Time (specific time like "7:00 PM", not just "evening")
+
+CURRENT EXTRACTED INFORMATION:
+- Name: ${session.extractedInfo.customer_name || 'MISSING'}
+- Party Size: ${session.extractedInfo.party_size || 'MISSING'}
+- Date: ${session.extractedInfo.date || 'MISSING'}  
+- Time: ${session.extractedInfo.time || 'MISSING'}
+- Phone: ${session.extractedInfo.phone_number || 'MISSING'}
+
+CONVERSATION HISTORY:
+${session.conversationHistory.map(msg => `${msg.role}: ${msg.message}`).join('\n')}
+
+INSTRUCTIONS:
+1. Extract any NEW information from the customer's latest message
+2. If you have ALL required info, create the booking  
+3. If missing ANY required info, ask specific follow-up questions
+4. Be conversational and helpful, not robotic
+5. Ask for ONE piece of missing information at a time
+6. Don't repeat questions you've already asked
+
+RESPONSE FORMATS:
+
+If COMPLETE booking info available:
+BOOKING_DATA: {"customer_name": "John Smith", "party_size": 4, "date": "2025-10-11", "time": "19:00", "phone_number": "${phoneNumber || 'unknown'}", "special_requests": "any notes"}
+RESPONSE: "Perfect! I have everything I need. I've reserved a table for [name], party of [size], on [date] at [time]. Your confirmation number is [generate random]. Thank you!"
+
+If MISSING info:
+EXTRACTED: {"customer_name": "value or null", "party_size": "value or null", "date": "value or null", "time": "value or null"}
+RESPONSE: "Thank you! I have [list what you got]. To complete your reservation, could you please tell me [ask for ONE specific missing item]?"
+
+EXAMPLES OF GOOD FOLLOW-UP QUESTIONS:
+- "Great! And what name should I put the reservation under?"
+- "Perfect! How many people will be joining you?"
+- "Excellent! What date would you like to dine with us?"
+- "Wonderful! What time would work best for you?"
 
 Current date/time: ${new Date().toISOString()}
+Restaurant hours: 5:00 PM - 11:00 PM, Tuesday-Sunday (Closed Mondays)
 
-When you have enough booking information, respond with:
-BOOKING_DATA: {JSON with customer_name, phone_number, party_size, date, start_time, end_time, notes}
-
-Always end your response with a natural, friendly message to speak back to the customer.
-
-Example responses:
-- "Perfect! I've created your reservation for John Smith, party of 4, tomorrow at 7 PM. Your confirmation number will be provided shortly. Thank you for choosing our restaurant!"
-- "I'd be happy to help you make a reservation! I heard you'd like a table, but could you please tell me your name, how many people, and what date and time you prefer?"
-- "Great! I have a table for 2 people. Could you please tell me your preferred date and time, and a phone number for the reservation?"`;
+Be friendly, professional, and persistent until you have everything needed!`;
 
     console.log('🚀 Sending chat completion request to Mistral AI...');
     const requestPayload = {
@@ -655,14 +764,14 @@ Example responses:
     const aiResponse = response.data.choices[0].message.content;
     console.log(`🤖 AI Response: "${aiResponse}"`);
     
-    // Check if AI created booking data
+    // Check for booking data or extracted information
     console.log('🔍 Checking for booking data in AI response...');
     let booking = null;
-    let action = 'conversation';
+    let action = 'need_more_info';
     
     const bookingMatch = aiResponse.match(/BOOKING_DATA:\s*(\{[^}]*\})/);
     if (bookingMatch) {
-      console.log('📝 Found booking data in response:', bookingMatch[1]);
+      console.log('📝 Found complete booking data:', bookingMatch[1]);
       try {
         booking = JSON.parse(bookingMatch[1]);
         action = 'booking_created';
@@ -671,19 +780,50 @@ Example responses:
         // Store the booking
         const newBooking = {
           id: bookings.length + 1,
+          confirmation_number: 'BV' + Date.now().toString().slice(-6),
           ...booking,
           created_at: new Date().toISOString(),
-          created_via: 'ai_conversation'
+          created_via: 'ai_conversation',
+          status: 'confirmed'
         };
         bookings.push(newBooking);
         console.log('📝 Booking stored in memory:', newBooking);
+        
+        // Clear the conversation session since booking is complete
+        conversationSessions.delete(sessionKey);
+        console.log('🗑️ Cleared conversation session:', sessionKey);
       } catch (parseError) {
         console.error('❌ Failed to parse booking JSON:', parseError);
         console.error('Raw booking data:', bookingMatch[1]);
       }
     } else {
-      console.log('ℹ️ No booking data found in AI response');
+      // Check for partial extracted information
+      const extractedMatch = aiResponse.match(/EXTRACTED:\s*(\{[^}]*\})/);
+      if (extractedMatch) {
+        console.log('📝 Found extracted info:', extractedMatch[1]);
+        try {
+          const extractedInfo = JSON.parse(extractedMatch[1]);
+          // Update session with new info
+          for (const key in extractedInfo) {
+            if (extractedInfo[key] && extractedInfo[key] !== 'null') {
+              session.extractedInfo[key] = extractedInfo[key];
+              console.log(`✅ Updated ${key}: ${extractedInfo[key]}`);
+            }
+          }
+        } catch (parseError) {
+          console.error('❌ Failed to parse extracted info:', parseError);
+        }
+      }
+      console.log('ℹ️ Still need more information, continuing conversation...');
     }
+    
+    // Add AI response to conversation history
+    session.conversationHistory.push({
+      role: 'assistant',
+      message: aiResponse,
+      timestamp: new Date()
+    });
+    session.lastResponse = aiResponse;
     
     // Clean the response (remove BOOKING_DATA part)
     const cleanResponse = aiResponse.replace(/BOOKING_DATA:\s*\{[^}]*\}/, '').trim();
