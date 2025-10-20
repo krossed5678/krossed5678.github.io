@@ -1,8 +1,3 @@
-/**
- * Analytics and Usage Tracking
- * Privacy-compliant analytics for production monitoring
- */
-
 class AnalyticsManager {
     constructor() {
         this.isEnabled = false;
