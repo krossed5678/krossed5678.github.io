@@ -1,33 +1,47 @@
 import fs from 'fs';
 import path from 'path';
+import { User } from './types/auth.types';
 
 const DB_PATH = path.join(__dirname, '..', 'server-db.json');
 
-export type Booking = {
+export interface Booking {
   id: number;
+  userId: number;
+  date: string;
+  time: string;
+  partySize: number;
+  specialRequests?: string;
+  status: BookingStatus;
   created_at: string;
+  updated_at: string;
   source?: string;
-  text: string;
+  text?: string;
   phone?: string;
-  status?: 'pending' | 'confirmed' | 'cancelled';
-};
+}
 
-export type User = { id: number; email: string; password_hash: string; is_verified?: number; created_at?: string };
+export type BookingStatus = 'pending' | 'confirmed' | 'cancelled' | 'completed';
 
-export type DB = { users?: User[]; bookings?: Booking[] };
+export interface DB {
+  users: User[];
+  bookings: Booking[];
+}
 
 export function loadDB(): DB {
   try {
     const raw = fs.readFileSync(DB_PATH, 'utf8');
     const data = JSON.parse(raw) as DB;
-    return { users: data.users || [], bookings: data.bookings || [] };
-  } catch (e:any) {
+    return {
+      users: data.users || [],
+      bookings: data.bookings || []
+    };
+  } catch (e) {
     return { users: [], bookings: [] };
   }
 }
 
-export function saveDB(db: DB) {
+export function saveDB(db: DB): void {
   fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2), 'utf8');
+}
 }
 
 export function getBookings(): Booking[] {
