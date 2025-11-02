@@ -1,0 +1,14 @@
+{
+  "name": "krossed5678-site",
+  "version": "0.1.0",
+  "private": true,
+  "devDependencies": {
+    "esbuild": "^0.25.12",
+    "typescript": "^5.4.2"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "build": "node build.js",
+    "dev": "node build.js --watch"
+  }
+}
